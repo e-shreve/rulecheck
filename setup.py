@@ -39,7 +39,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'rulecheck = rulecheck:main',
+            'rulecheck = rulecheck.engine:main',
         ],
     },    
 )

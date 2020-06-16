@@ -37,7 +37,7 @@ Ensure dependencies are present on the system (see below) and then run:
 ```
 git clone https://github.com/e-shreve/rulecheck
 cd rulecheck
-python setup.py install
+pip install .
 ```
 
 #### Dependencies
@@ -58,6 +58,10 @@ For easiest use, srcml should be on the path. Otherwise, the path to srcml can b
 ___
 ### Running
 ___
+
+```
+rulecheck --help
+```
 
 Note that extensions are case sensitive and .C and .H are by default treated as C++ source files whereas .c and .h
 are treated as C source files.
