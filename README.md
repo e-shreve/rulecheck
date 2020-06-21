@@ -56,20 +56,14 @@ install srcml. Find installation files at https://www.srcml.org/ and install on 
 Version required: 1.0.0 or greater.
 For easiest use, srcml should be on the path. Otherwise, the path to srcml can be provided when starting rulecheck from the command line.
 
+
 ___
-### Running
+### Running and Configuration
 ___
 
 ```
 rulecheck --help
 ```
-
-Note that extensions are case sensitive and .C and .H are by default treated as C++ source files whereas .c and .h
-are treated as C source files.
-
-___
-### Config
-___
 
 #### Selecting Rules
 
@@ -193,6 +187,9 @@ When searching the paths specified, rulecheck will process any file found with o
 .c, .h, .i, .cpp, .CPP, .cp, .hpp, .cxx, .hxx, .cc, .hh, .c++, .h++, .C, .H, .tcc, .ii, .java, .aj, .cs
 
 To change the list of extensions rulecheck will parse when searching paths, use the -x or --extensions command line option.
+
+Note that extensions are case sensitive and .C and .H are by default treated as C++ source files whereas .c and .h are treated as C source files. 
+To change the language to extension mapping see the --register-ext option.
 
 #### Specifying Where Rule Scripts Are
 
