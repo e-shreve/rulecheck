@@ -357,10 +357,13 @@ class RuleManager:
                         if rule.is_active():
                             meth = getattr(rule, 'visit_file_open', None)
                             if meth is not None:
-                                meth(LogFilePosition(-1, -1), file_name)
+                                try:
+                                    meth(LogFilePosition(-1, -1), file_name)
+                                except Exception as e:
+                                    log_rule_exception("Exception thrown while calling visit_file_open. See stderr.", e, name)
                     except Exception as e:
-                        #log_rule_exception("Exception thrown while calling visit_file_open. See stderr.", e, name)
-                        pass
+                        log_rule_exception("Exception thrown while calling is_active(). See stderr.", e, name)
+                        
 
     def visit_file_close(self, file_name:str):
         """Calls visit_file_close(pos, file_name) on any rule providing that method."""
@@ -372,9 +375,12 @@ class RuleManager:
                         if rule.is_active():
                             meth = getattr(rule, 'visit_file_close', None)
                             if meth is not None:
-                                meth(LogFilePosition(-1, -1), file_name)
+                                try:
+                                    meth(LogFilePosition(-1, -1), file_name)
+                                except Exception as e:
+                                    log_rule_exception("Exception thrown while calling visit_file_close. See stderr.", e, name)
                     except Exception as e:
-                        log_rule_exception("Exception thrown while calling visit_file_close. See stderr.", e, name)
+                        log_rule_exception("Exception thrown while calling is_active(). See stderr.", e, name)
 
     def visit_file_line(self, line_num:int, line:str):
         """Calls visit_file_line(pos, line) on any rule providing that method."""
@@ -382,14 +388,17 @@ class RuleManager:
         for name, rule_array in self._rules_dict.items():
             self.current_rule_name = name
             for rule in rule_array:
-                if rule.is_active():
-                    try:
-                        meth = getattr(rule, 'visit_file_line', None)
-                        if meth is not None:
-                            meth(LogFilePosition(line_num, -1), line)
+                try:
+                    if rule.is_active():
+                        try:
+                            meth = getattr(rule, 'visit_file_line', None)
+                            if meth is not None:
+                                meth(LogFilePosition(line_num, -1), line)
+                            except Exception as e:
+                                log_rule_exception("Exception thrown while calling visit_file_line. See stderr.", e, name)
                     except Exception as e:
-                        log_rule_exception("Exception thrown while calling visit_file_line. See stderr.", e, name)
-
+                        log_rule_exception("Exception thrown while calling is_active(). See stderr.", e, name)
+                        
     def visit_file_lines(self, from_line:int, to_line:int, source_lines):
         """Calls visit_file_line(pos, line) once for each line from 'from_line' to 'to_line -1 '
            on any rule providing the visit_file_line method.
@@ -420,15 +429,22 @@ class RuleManager:
                         # collision between <xml_name> and <name> since the former is not allowed.
                         meth = getattr(rule, 'visit_xml_'+tagName+'_'+event, None)
                         if meth is not None:
-                            meth(copy.copy(pos), node)
+                            try:
+                                meth(copy.copy(pos), node)
+                            except Exception as e:
+                                log_rule_exception("Exception thrown while calling " + 'visit_xml_'+tagName+'_'+event + ". See stderr.", e, name)
                         else:
                             # Location of 'xml' in name is different to avoid problems if the
                             # xml document has an <any_other_xml_element> tag.
                             meth = getattr(rule, 'visit_any_other_xml_element_'+event, None)
                             if meth is not None:
-                                meth(copy.copy(pos), node)
+                                try:
+                                    meth(copy.copy(pos), node)
+                                except Exception as e:
+                                    log_rule_exception("Exception thrown while calling " + 'visit_any_other_xml_element_'+event + ". See stderr.", e, name)
+
                 except Exception as e:
-                    log_rule_exception("Exception thrown while calling " + 'visit_xml_'+tagName+'_'+event + ". See stderr.", e, name)
+                    log_rule_exception("Exception thrown while calling is_active(). See stderr.", e, name)
 
     def run_rules_on_file(self, file_name:str, source_lines:[str], srcml:Srcml):
 
