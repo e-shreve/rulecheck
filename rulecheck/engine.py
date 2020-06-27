@@ -394,10 +394,10 @@ class RuleManager:
                             meth = getattr(rule, 'visit_file_line', None)
                             if meth is not None:
                                 meth(LogFilePosition(line_num, -1), line)
-                            except Exception as e:
-                                log_rule_exception("Exception thrown while calling visit_file_line. See stderr.", e, name)
-                    except Exception as e:
-                        log_rule_exception("Exception thrown while calling is_active(). See stderr.", e, name)
+                        except Exception as e:
+                            log_rule_exception("Exception thrown while calling visit_file_line. See stderr.", e, name)
+                except Exception as e:
+                    log_rule_exception("Exception thrown while calling is_active(). See stderr.", e, name)
                         
     def visit_file_lines(self, from_line:int, to_line:int, source_lines):
         """Calls visit_file_line(pos, line) once for each line from 'from_line' to 'to_line -1 '
