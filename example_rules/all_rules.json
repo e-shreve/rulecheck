@@ -1,0 +1,28 @@
+{
+  "rules": [
+    {
+       "name" : "example_rules.file_based_rule"
+    },
+    {
+       "name" : "example_rules.line_based_rule"
+    },
+    {
+       "name" : "example_rules.srcml_based_rule"
+    },
+    {
+       "name" : "example_rules.file_based_rule"
+    },
+    {
+       "name" : "example_rules.self_disabling_rule"
+    },
+    {
+       "name" : "example_rules.indentation_sensitive_rule"
+    },                        
+    {
+       "name" : "example_rules.rule_with_settings",
+       "settings" : {
+          "word_to_find" : "return"
+       }
+    }
+  ]
+}

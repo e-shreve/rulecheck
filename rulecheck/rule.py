@@ -42,7 +42,7 @@ class Rule:
         """Implemented rules must declare their type"""
         pass
 
-    def is_whitespace_sensitive(self) -> bool:
+    def is_indentation_sensitive(self) -> bool:
         return False
 
     def is_active(self) -> bool:
@@ -61,6 +61,6 @@ class Rule:
         Rule.log_function = log_function
 
     def log(self, logType:LogType, pos:LogFilePosition, message:str):
-        Rule.log_function(logType, pos, message, self.is_whitespace_sensitive())
+        Rule.log_function(logType, pos, message, self.is_indentation_sensitive())
                 
         

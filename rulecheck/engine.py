@@ -92,7 +92,7 @@ class Logger(object):
     def get_error_count(self) -> int:
         return self._total_errors
 
-    def log_violation(self, log_type:rule.LogType, pos:LogFilePosition, msg:str, include_white_space:bool, file_name:str, rule_name:str, source_lines:[str]):
+    def log_violation(self, log_type:rule.LogType, pos:LogFilePosition, msg:str, include_indentation:bool, file_name:str, rule_name:str, source_lines:[str]):
         """Log function for violations
 
         Each violation is logged as follows (with items in [] optional based on logging settings:
@@ -123,8 +123,8 @@ class Logger(object):
         if (pos.line > 0 and pos.line < len(source_lines)):
             line_text = source_lines[pos.line-1]
             #print ("log against line text: " + line_text)
-            if not include_white_space:
-                line_text = line_text.strip()
+            if not include_indentation:
+                line_text = line_text.lstrip()
             log_hash = hashlib.md5((file_name + rule_name + log_type.name + line_text).encode('utf-8')).hexdigest()
         else:
             log_hash = hashlib.md5((file_name + rule_name + log_type.name).encode('utf-8')).hexdigest()
@@ -412,7 +412,12 @@ class RuleManager:
             for rule in rule_array:
                 try:
                     if rule.is_active():
-                        # First look for visit methods that include the event name
+                        # First look for visit methods that include the tag name
+                        # Note: parsing xml, the visit methods must be named visit_xml_nodename_start|end. 
+                        # The use of xml_ at the start avoids collisions with visit_file_open and visit_file_line
+                        # should a <file_open>, <file_close> or <file_line> tag be encountered. Since the XML standard
+                        # does not allow nodenames to start with 'xml' we also don't have to be concerned with an
+                        # collision between <xml_name> and <name> since the former is not allowed.
                         meth = getattr(rule, 'visit_xml_'+tagName+'_'+event, None)
                         if meth is not None:
                             meth(copy.copy(pos), node)
@@ -503,7 +508,7 @@ class FileManager:
     def process_source(self, source:str):
         self.current_file_name = source
         try:
-            f = open(source, 'r')
+            f = open(source, 'r', newline='')
             try:
                 self.print_verbose("Opened file for checking: " + source)
                 self.source_lines=f.readlines()
@@ -543,7 +548,7 @@ def print_summary(logger:Logger):
     print ("Total Errors: " + str(logger.get_error_count()))
 
 
-def log_violation_wrapper(log_type:rule.LogType, pos:LogFilePosition, msg:str, include_white_space:bool):
+def log_violation_wrapper(log_type:rule.LogType, pos:LogFilePosition, msg:str, include_indentation:bool):
     """ Wrapper used by Rule objects.
 
     This procedure handles gluing together the state of the file currently being checked with the violation
@@ -557,7 +562,7 @@ def log_violation_wrapper(log_type:rule.LogType, pos:LogFilePosition, msg:str, i
     global rule_manager
     global file_manager
 
-    logger.log_violation(log_type, pos, msg, include_white_space, file_manager.current_file_name, rule_manager.current_rule_name, file_manager.source_lines)
+    logger.log_violation(log_type, pos, msg, include_indentation, file_manager.current_file_name, rule_manager.current_rule_name, file_manager.source_lines)
 
 def log_rule_exception(msg:str, e:Exception, rule_name:str):
     """ Wrapper used to log issues when working with a rule.
