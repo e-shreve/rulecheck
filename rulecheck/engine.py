@@ -400,11 +400,12 @@ class RuleManager:
                     log_rule_exception("Exception thrown while calling is_active(). See stderr.", e, name)
                         
     def visit_file_lines(self, from_line:int, to_line:int, source_lines):
-        """Calls visit_file_line(pos, line) once for each line from 'from_line' to 'to_line -1 '
+        """Calls visit_file_line(pos, line) once for each line from 'from_line' to 'to_line'
            on any rule providing the visit_file_line method.
         """
-
-        for line_num in range(from_line, to_line+1):
+        # Guard against going beyond end of source_lines array is needed to handle a bug in srcml.
+        # See rulecheck's defect #22 (github) for details.
+        for line_num in range(from_line, min(to_line+1, len(source_lines))):
             # -1 to line_num to convert to array's 0 based index.
             self.visit_file_line(line_num, source_lines[line_num-1])
 
