@@ -1,16 +1,20 @@
 import argparse
 import copy
+from decimal import *
 import fileinput
 import glob
 import hashlib
 import io
 import json
+import math
 import os
 import pathlib
 import re
 import shutil
+import string
 import subprocess
 import sys
+import traceback
 import typing
 
 # 3rd party imports
@@ -32,6 +36,227 @@ __version__ = '0.5'
 #################################################
 
 
+class IgnoreFileEntry(object):
+    """ Parses a line (string) into the members of an ignore entry from an ignore file.
+        Always check is_valid() before using any of the getters on the object.
+    """
+    def __init__(self, line:str):
+        self._valid = False
+        self._line_num = -1
+        self._col_num = -1
+        
+        parts = line.split(sep=':')
+        
+        if len(parts) < 5:
+            return
+                    
+        # First value on line must be hash        
+        if len(parts[0]) == 32 and all(c in string.hexdigits for c in parts[0]):
+            self._hash = parts[0]
+        else:
+            return
+        
+        # Second value on line must be the filename
+        self._file_name = parts[1]
+        
+        # Line and column numbers are optional. Thus,
+        # start tracking the next part of the line in a variable...
+        next_part = 2
+        
+        if parts[next_part].isdigit():
+            self._line_num = int(parts[next_part])
+            
+            next_part += 1
+            
+            # Column is only specified if there was a row
+            if parts[next_part].isdigit():
+                self._col_num = int(parts[next_part])
+                next_part += 1
+            
+        
+        if parts[next_part] == "ERROR":
+            self._log_type = rule.LogType.ERROR
+            next_part += 1
+        elif parts[next_part] == "WARNING":
+            self._log_type = rule.LogType.WARNING
+            next_part += 1
+        else:
+            return
+        
+        self._rule_name = parts[next_part] 
+        next_part += 1
+               
+        if (next_part == len(parts) - 1):
+            self._message = parts[next_part]
+        else:
+            self._message = ':'.join(parts[next_part:])
+        
+        self._valid = True
+           
+    def print(self):
+        print("h: " + self.get_hash() + " f: " + self.get_file_name() + " l,c: " + str(self.get_line_num())+","+str(self.get_col_num()) + " t: " + str(self.get_log_level()) + " r: " + self.get_rule_name() + " m: " + self.get_message())
+    
+    def get_hash(self) -> str:
+        return self._hash
+    
+    def get_file_name(self):
+        return self._file_name
+    
+    def get_line_num(self) -> int:
+        return self._line_num
+    
+    def get_col_num(self):
+        return self._col_num
+    
+    def get_rule_name(self):
+        return self._rule_name
+    
+    def get_log_level(self):
+        return self._log_type
+    
+    def get_message(self):
+        return self._message
+    
+    def is_valid(self) -> bool:
+        return self._valid
+    
+    
+
+class IgnoreFilter(object):
+    """ Used to filter log messages. """
+    def __init__(self, ignore_list_file_handle:typing.TextIO, verbose:bool):
+        self._ignore_list_file_handle = ignore_list_file_handle
+        self._rule_ignores = {}
+        self.verbose = verbose
+    
+    def print_verbose(self, message:str):
+        if self.verbose:
+            print(message)
+        
+        
+    def init_filter(self, file_name:str):
+        self._rule_ignores.clear()
+        
+        try:
+            if self._ignore_list_file_handle:
+                self._ignore_list_file_handle.seek(0)
+                for line in self._ignore_list_file_handle:
+                    entry = IgnoreFileEntry(line)
+                    
+                    if entry.is_valid() and entry.get_file_name() == file_name:
+                    
+                        rule_name = entry.get_rule_name()
+                        if rule_name not in self._rule_ignores:
+                            self._rule_ignores[rule_name] = []
+                    
+                        self._rule_ignores[rule_name].append(IgnoreEntry(entry.get_hash(), entry.get_line_num(), entry.get_line_num()))
+                    
+        except Exception as e:
+            print("Failure while checking ignore list. Run with verbose mode on for more information.")
+            self.print_verbose("Exception on parsing ignore list: " + str(e))
+            self.print_verbose(traceback.format_exc())
+           
+    def disable(self, rule_name:str, line_num:int):               
+        if rule_name not in self._rule_ignores:
+            self._rule_ignores[rule_name] = []
+        
+        self._rule_ignores[rule_name].append(IgnoreEntry('*', line_num, line_num))
+        
+    def is_filtered(self, rule_name:str, line_num:int, line_hash:hashlib.md5) -> bool:
+        """ Returns True if the violation should not be logged """
+        
+        if '*' in self._rule_ignores:
+            for ignore in self._rule_ignores['*']:
+                if ignore.is_active():
+                    if line_num >= ignore.get_first() and line_num <= ignore.get_last():
+                        if ignore.get_hash() == '*' or ignore.get_hash() == str(line_hash):
+                            ignore.mark_use()
+                            return True
+                        
+        if rule_name in self._rule_ignores:   
+            for ignore in self._rule_ignores[rule_name]:
+                if ignore.is_active():
+                    if line_num >= ignore.get_first() and line_num <= ignore.get_last():
+                        if ignore.get_hash() == '*' or ignore.get_hash() == str(line_hash):
+                            ignore.mark_use()
+                            return True
+        return False
+
+class IgnoreEntry(object):
+    """ IgnoreEntries are like ranges, except that:
+        * The end value is inclusive, and thus called 'last'
+        * The last value can be 'Inf' for infinite
+        * They hold a hash value
+        
+        Also, the start value is referred to as start.
+        
+        The various comparison operators are overridden in ways that support the use of
+        IgnoreEntries for the purpose of disabling logging of rules over certain line ranges.
+        Their operation may not be directly intuitive. 
+    """
+    def __init__(self, hash:str, first, last):
+        self.first = Decimal(first)
+        self.last = Decimal(last)
+        self.hash = hash
+        self._is_active = True
+
+
+    def get_first(self) -> Decimal:
+        return self.first
+    
+    def get_last(self) -> Decimal:
+        return self.last
+    
+    def get_hash(self) -> str:
+        return self.hash
+   
+    def is_active(self) -> bool:
+        return self._is_active
+    
+    def mark_use(self):
+        if self.get_hash() != '*':
+            self._is_active = False
+        return
+     
+    def __lt__(self, key): 
+        """ Compare is done against the first value of the set only. """
+        if isinstance(key, IgnoreEntry):
+            return self.get_first() < key.get_first()
+        else:
+            return self.get_first() < key
+        
+    def __le__(self, key): 
+        """ Compare is done against the first value of the set only. """
+        if isinstance(key, IgnoreEntry):
+            return self.get_first() <= key.get_first()
+        else:
+            return self.get_first() <= key
+        
+    def __gt__(self, key):
+        """ Compare is done against the first value of the set only. """ 
+        if isinstance(key, IgnoreEntry):
+            return self.get_first() > key.get_first()
+        else:
+            return self.get_first() > key
+        
+    def __ge__(self, key): 
+        """ Compare is done against the first value of the set only. """
+        if isinstance(key, IgnoreEntry):
+            return self.get_first() >= key.get_first()
+        else:
+            return self.get_first() >= key
+        
+    def __eq__(self, key): 
+        """ To be equal, the first, last, and hash value must all be equal """
+        if isinstance(key, IgnoreEntry):
+            return self.get_first() == key.get_first() and self.get_last() == key.get_last() and \
+                self.get_hash() == key.get_hash()
+        else:
+            return False
+        
+    def __ne__(self, key): 
+        return not self.__eq__(key)
+
 class Logger(object):
     """ Class used to perform the logging.
 
@@ -39,15 +264,17 @@ class Logger(object):
 
     """
 
-    def __init__(self, tab_size:int, show_hash:bool, warnings_are_errors:bool, ignore_list_file_handle:typing.TextIO, verbose:bool):
+    def __init__(self, tab_size:int, show_hash:bool, warnings_are_errors:bool, ignore_filter:IgnoreFilter, 
+                 verbose:bool):
         self._tabsize= tab_size
         self._show_hash = show_hash
         self._warnings_are_errors = warnings_are_errors
-        self._ignore_list_file_handle = ignore_list_file_handle
+        self._ignore_filter = ignore_filter
         self.verbose = verbose
         self._total_warnings = 0
         self._total_errors = 0
-
+        self._total_ignored_warnings = 0
+        self._total_ignored_errors = 0
 
     def print_verbose(self, message:str):
         if self.verbose:
@@ -86,11 +313,26 @@ class Logger(object):
     def increment_errors(self):
         self._total_errors += 1;
 
+    def increment_ignored_warnings(self):
+        if self.warnings_are_errors():
+            self.increment_ignored_errors()
+        else:
+            self._total_ignored_warnings += 1;
+
+    def increment_ignored_errors(self):
+        self._total_ignored_errors += 1;
+
     def get_warning_count(self) -> int:
         return self._total_warnings
 
     def get_error_count(self) -> int:
         return self._total_errors
+    
+    def get_ignored_warning_count(self) -> int:
+        return self._total_ignored_warnings
+
+    def get_ignored_error_count(self) -> int:
+        return self._total_ignored_errors
 
     def log_violation(self, log_type:rule.LogType, pos:LogFilePosition, msg:str, include_indentation:bool, file_name:str, rule_name:str, source_lines:[str]):
         """Log function for violations
@@ -129,8 +371,7 @@ class Logger(object):
         else:
             log_hash = hashlib.md5((file_name + rule_name + log_type.name).encode('utf-8')).hexdigest()
 
-        if not self.is_in_ignore_list(log_hash, self.get_ignore_list_file_handle()):
-
+        if not self._ignore_filter.is_filtered(rule_name, pos.line, log_hash):
 
             if (self.show_hash()):
                 log_msg = log_msg + log_hash + ":"
@@ -149,25 +390,12 @@ class Logger(object):
                 self.increment_errors()
             else:
                 self.increment_warnings()
-
-    def is_in_ignore_list(self, hash_to_check:hashlib.md5, ignore_list_file_handle) -> bool:
-        """ Helper function for log_violation to determine if a violation is to be ignored. """
-
-        result = False
-
-        try:
-            if ignore_list_file_handle:
-                ignore_list_file_handle.seek(0)
-                for line in ignore_list_file_handle:
-                    if hash_to_check in line:
-                        result = True
-        except Exception as e:
-            print("Failure while checking ignore list. Run with verbose mode on for more information.")
-            self.print_verbose("Exception on parsing ignore list: " + str(e))
-
-        return result
-
-
+        else:
+            if adjusted_log_type == rule.LogType.ERROR:
+                self.increment_ignored_errors()
+            else:
+                self.increment_ignored_warnings()
+                
 #################################################
 ##
 ## SrcML Management
@@ -264,10 +492,12 @@ class Srcml:
 
 class RuleManager:
 
-    def __init__(self, verbose:bool):
+    def __init__(self, logger:Logger, ignore_filter:IgnoreFilter, verbose:bool):
         self._rules_dict = {}
         self.current_rule_name = "rulecheck"
         self.verbose = verbose
+        self._logger_ref = logger
+        self._ignore_filter = ignore_filter
 
     def print_verbose(self, message:str):
         if self.verbose:
@@ -397,16 +627,29 @@ class RuleManager:
                         except Exception as e:
                             log_rule_exception("Exception thrown while calling visit_file_line. See stderr.", e, name)
                 except Exception as e:
-                    log_rule_exception("Exception thrown while calling is_active(). See stderr.", e, name)
-                        
+                    log_rule_exception("Exception thrown while calling is_active(). See stderr.", e, name)  
+
+    def check_for_rule_disable(self, line_num:int, line:str):
+        match = re.search(r'(NORCNEXTLINE|NORC)\(([^)]+)', line)
+        if match:
+            if 'NORCNEXTLINE' == match.group(1):
+                line_num += 1
+
+            rules = match.group(2).split(',')
+
+            for rule in rules:
+                self._ignore_filter.disable(rule.strip(), line_num)
+
     def visit_file_lines(self, from_line:int, to_line:int, source_lines):
         """Calls visit_file_line(pos, line) once for each line from 'from_line' to 'to_line'
            on any rule providing the visit_file_line method.
         """
+
         # Guard against going beyond end of source_lines array is needed to handle a bug in srcml.
         # See rulecheck's defect #22 (github) for details.
         for line_num in range(from_line, min(to_line+1, len(source_lines))):
             # -1 to line_num to convert to array's 0 based index.
+            self.check_for_rule_disable(line_num, source_lines[line_num-1])
             self.visit_file_line(line_num, source_lines[line_num-1])
 
     def strip_namespace(self, fullTagName:str) -> str:
@@ -448,6 +691,7 @@ class RuleManager:
                     log_rule_exception("Exception thrown while calling is_active(). See stderr.", e, name)
 
     def run_rules_on_file(self, file_name:str, source_lines:[str], srcml:Srcml):
+        self._ignore_filter.init_filter(file_name)
 
         self.activate_all_rules()
 
@@ -480,17 +724,14 @@ class RuleManager:
 
                         pos = LogFilePosition(element_line, col_num)
                         self.visit_xml(pos, elem, event)
-
                 else:
                     # Process line visitors of any lines not visited yet up to
                     # and including the line this element is on.
                     self.visit_file_lines(next_line, element_line, source_lines)
                     next_line = element_line + 1
 
-
                     pos = LogFilePosition(element_line, col_num)
                     self.visit_xml(pos, elem, event)
-
         else:
             self.visit_file_lines(1, len(source_lines), source_lines)
 
@@ -560,9 +801,10 @@ def print_verbose(message:str):
 
 def print_summary(logger:Logger):
     global file_manager
-    print ("Total Files Checked: " + str(file_manager.get_file_count()))
-    print ("Total Warnings: " + str(logger.get_warning_count()))
-    print ("Total Errors: " + str(logger.get_error_count()))
+    print("Total Files Checked: " + str(file_manager.get_file_count()))
+    print("Total Warnings (ignored): " + str(logger.get_warning_count()) + "(" + str(logger.get_ignored_warning_count()) + ")")
+    print("Total Errors (ignored): " + str(logger.get_error_count()) + "(" + str(logger.get_ignored_error_count()) + ")")
+    
 
 
 def log_violation_wrapper(log_type:rule.LogType, pos:LogFilePosition, msg:str, include_indentation:bool):
@@ -645,11 +887,11 @@ def rulecheck(args) -> int:
     if srcml_bin:
         print_verbose("srcml binary located at: " + srcml_bin)
     else:
-        print ("Could not locate srcml binary!")
+        print("Could not locate srcml binary!")
         if args.srcml:
-            print ("srcml path was specified as: " + args.srcml)
+            print("srcml path was specified as: " + args.srcml)
         else:
-            print ("system path was searched")
+            print("system path was searched")
         return 1
 
     srcml_args = []
@@ -667,7 +909,7 @@ def rulecheck(args) -> int:
             if len(regext) == 2:
                 srcml.add_ext_mapping('.'+regext[0], regext[1])
             else:
-                print ("Bad --register-ext option: " + register_ext)
+                print("Bad --register-ext option: " + register_ext)
                 return 1
 
         print_verbose("Extension to language mappings for srcml are: " + str(srcml.get_ext_mappings()))
@@ -676,12 +918,14 @@ def rulecheck(args) -> int:
     if args.ignorelist:
         print_verbose("Ignore list specified: " + args.ignorelist)
         ignore_list_file_handle = open(args.ignorelist, "r")
+        
+    ignore_filter = IgnoreFilter(ignore_list_file_handle, verbose)
 
-    logger = Logger(args.tabs, args.generatehashes, args.Werror, ignore_list_file_handle, verbose)
+    logger = Logger(args.tabs, args.generatehashes, args.Werror, ignore_filter, verbose)
 
     rule.Rule.set_logger(log_violation_wrapper)
     
-    rule_manager = RuleManager(verbose)
+    rule_manager = RuleManager(logger, ignore_filter, verbose)
 
     rule_manager.load_rules(args.config, args.rulepaths)
 
