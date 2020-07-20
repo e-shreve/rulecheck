@@ -241,7 +241,31 @@ comments in the source code.
 
 ### Source Comment Commands to Rulecheck
 
-- [ ] to be written once feature is implemented.
+A NORC comment is used to have rulecheck ignore violations reported for the same line the comment is on. The NORCNEXTLINE comment will cause rulecheck to ignore violations on the next line.
+
+Both comments must include an open and closed parenthesis containing either the '\*' character or a comma
+separated list of rules to be ignored. Use of the '\*' character will cause all rules to be suppressed.
+
+For example:
+```C
+
+// Ignore all violations on the line:
+void myFunction1(int a); // NORC(*)
+
+// Ignore all violations on the next line:
+// NORCNEXTLINE(*)
+void myFunction2(int a); 
+
+// Specific rules can be ignored:
+// NORCNEXTLINE(myrulepack.rule1, myrulepack.rule2)
+void myFunction3(int a); 
+
+// Comments after the closing parenthesis may contain any text.
+// It is good practice to justify the suppression.
+void myFunction4(int a); // NORC(myrulepack.function\_name\_prefix): Function name required for backward compatibility.
+```
+
+Note that whitespace between NORC/NORCNEXTLINE and the opening parenthesis are not allowed.
 
 ### <a id="ignore_lists"></a>Ignore Lists
 
