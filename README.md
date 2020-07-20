@@ -243,8 +243,8 @@ comments in the source code.
 
 A NORC comment is used to have rulecheck ignore violations reported for the same line the comment is on. The NORCNEXTLINE comment will cause rulecheck to ignore violations on the next line.
 
-Both comments must include an open and closed parenthesis containing either the '*' character or a comma
-separated list of rules to be ignored. Use of the '*' character will cause all rules to be supressed.
+Both comments must include an open and closed parenthesis containing either the '\*' character or a comma
+separated list of rules to be ignored. Use of the '\*' character will cause all rules to be suppressed.
 
 For example:
 ```C
