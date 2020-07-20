@@ -252,7 +252,7 @@ For example:
 // Ignore all violations on the line:
 void myFunction1(int a); // NORC(*)
 
-// Ignore all violations on the next line line:
+// Ignore all violations on the next line:
 // NORCNEXTLINE(*)
 void myFunction2(int a); 
 
