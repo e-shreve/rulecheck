@@ -10,6 +10,7 @@ import json
 
 import pytest
 from rulecheck.engine import RuleManager
+from rulecheck.engine import IgnoreFilter
 from rulecheck.engine import Srcml
 from rulecheck import rule
 
@@ -17,7 +18,8 @@ from rulecheck import rule
 
 @pytest.fixture
 def rule_manager():
-    return RuleManager(verbose=False)
+    ignore_filter = IgnoreFilter(None, verbose=False)
+    return RuleManager(None, ignore_filter, verbose=False)
 
 def test_no_config(rule_manager):
     """ Confirm that empty/none rule config list does not result in exception """ 
