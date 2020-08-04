@@ -10,6 +10,7 @@ import json
 
 import pytest
 from rulecheck.engine import RuleManager
+from rulecheck.engine import IgnoreFilter
 from rulecheck.engine import Srcml
 from rulecheck import rule
 
@@ -17,7 +18,8 @@ from rulecheck import rule
 
 @pytest.fixture
 def rule_manager():
-    return RuleManager(verbose=False)
+    ignore_filter = IgnoreFilter(None, verbose=False)
+    return RuleManager(None, ignore_filter, verbose=False)
 
 def test_no_config(rule_manager):
     """ Confirm that empty/none rule config list does not result in exception """ 
@@ -396,7 +398,7 @@ def test_run_rules_on_file_with_srcml_order(rule_manager, mocker):
     rule_manager._rules_dict['rule1'] = [rule1]
 
 
-    rule_manager.run_rules_on_file("file.c", ['#include "common.h"', "", "int", "main(void)", "{", "    function_x();", "}", ""], srcml)
+    rule_manager.run_rules_on_file("file.c", ['#include "common."', "", "int", "main(void)", "{", "    function_x();", "}", ""], srcml)
     filePos = rule.LogFilePosition(-1,-1)
     rulemocks.assert_has_calls([mocker.call.r1.set_active(),
                                 mocker.call.r1.is_active(),

@@ -371,7 +371,7 @@ class Logger(object):
         else:
             log_hash = hashlib.md5((file_name + rule_name + log_type.name).encode('utf-8')).hexdigest()
 
-        if not self._ignore_filter.is_filtered(rule_name, pos.line, log_hash):
+        if not self._ignore_filter or not self._ignore_filter.is_filtered(rule_name, pos.line, log_hash):
 
             if (self.show_hash()):
                 log_msg = log_msg + log_hash + ":"
@@ -647,7 +647,7 @@ class RuleManager:
 
         # Guard against going beyond end of source_lines array is needed to handle a bug in srcml.
         # See rulecheck's defect #22 (github) for details.
-        for line_num in range(from_line, min(to_line+1, len(source_lines))):
+        for line_num in range(from_line, min(to_line+1, len(source_lines)+1)):
             # -1 to line_num to convert to array's 0 based index.
             self.check_for_rule_disable(line_num, source_lines[line_num-1])
             self.visit_file_line(line_num, source_lines[line_num-1])
@@ -703,9 +703,10 @@ class RuleManager:
         srcml_bytes = srcml.get_srcml(file_name)
 
         if srcml_bytes != None:
-            context = ET.iterparse(io.BytesIO(srcml_bytes), events=("start", "end"))
+            root = ET.parse(io.BytesIO(srcml_bytes))
+            context = ET.iterwalk(root, events=("start", "end"))
 
-            for event,elem in iter(context):
+            for event,elem in context:
                 line_num, col_num = srcml.get_row_col(elem, event)
 
                 if line_num > element_line:
