@@ -398,7 +398,7 @@ def test_run_rules_on_file_with_srcml_order(rule_manager, mocker):
     rule_manager._rules_dict['rule1'] = [rule1]
 
 
-    rule_manager.run_rules_on_file("file.c", ['#include "common."', "", "int", "main(void)", "{", "    function_x();", "}", ""], srcml)
+    rule_manager.run_rules_on_file("file.c", ['#include "common.h"', "", "int", "main(void)", "{", "    function_x();", "}", ""], srcml)
     filePos = rule.LogFilePosition(-1,-1)
     rulemocks.assert_has_calls([mocker.call.r1.set_active(),
                                 mocker.call.r1.is_active(),
