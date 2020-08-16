@@ -63,11 +63,17 @@ Rules define optional methods which rulecheck will call during initialization an
 The order in which rulecheck calls these parsing methods is: 
 * visit_file_open
 * visit_xml_unit_start
-* then rulecheck loops over each line for each line from first to last and calls:
+* then rulecheck loops over each line and for each line from first to last it calls:
    * visit_file_line
-   * visit_xml_* methods for any source element starting or ending on the line, in a left to right order.
+   * visit_xml_* methods for any source element starting or ending on the line, in a left to right order. (see note below)
 * visit_xml_unit_end
 * visit_file_close
+
+Note: rulecheck will call visit_file_line for a given line first and then call the visit_xml_* methods for tags that
+exist on _that_ line in the SrcML output. The line number on which the tag appears is used for this logic and _not_ the 
+position information reported by SrcML. This can lead to an unexpected order with block_content tags since they often
+exist in the XML on lines different than the start or ending positions reported by the tag attribute. See 
+https://github.com/srcML/srcML/issues/1707 for some discussion of block_content tags.
 
 In addition to those parsing related methods, the following methods may be called by rulecheck:
 
@@ -83,10 +89,15 @@ In addition to those parsing related methods, the following methods may be calle
 
 All of the file parsing methods take a rule.LogFilePosition parameter. Rulecheck will
 populate this parameter with the row and column number of the element being parsed. 
-Rules can access and change these values as pos.row and pos.col.
+Rules can access and change these values as pos.row and pos.col. 
 
 A value of -1 for the row or column number indicates that the value is unknown or not applicable.
 For example, on visit_file_open(), the position information will be set to [-1,-1].
+
+For visit_file_line, the position row is based on the line number of the parsed file and the column will be set to -1.
+For visit_xml_* methods, rulecheck generally uses the position information reported by srcml. The exception is the
+visit_xml_unit_* methods as srcml does not report position information on unit tags. For these, rulecheck reports [1,-1]
+for visit_xml_unit_start and [X,-1] for visit_xml_unit_end, where X is the maximum line number of the file.
 
 The log method in the Rule class also takes a LogFilePosition parameter. Many times,
 rules can simply pass the received position information on to the log method. However, 

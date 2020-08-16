@@ -473,7 +473,7 @@ class Srcml:
 
         return stdout
 
-    def get_row_col(self, element : ET.Element, event:str):
+    def get_pos_row_col(self, element : ET.Element, event:str):
         """Returns [row,col] from srcML position start attribute or [-1,-1] it the
         attribute is not present"""
 
@@ -489,6 +489,25 @@ class Srcml:
             col_num = int(srcml_pos[1])
 
         return [row_num, col_num]
+
+    def get_xml_line(self, element : ET.Element, event:str):
+        """Returns line number within the xml stream where 'element' starts or ends"""
+
+        line_num = -1
+        content = "start"
+        
+        if event == "start":
+            # Subtract one because first xml line in the srcml is the XML declaration
+            line_num = element.sourceline - 1
+        elif event == "end":
+            # Based on https://stackoverflow.com/a/47903639, by RomanPerekhrest
+            line_num = element.sourceline - 1
+            content = ET.tostring(element, method="text",  with_tail=False)
+            if content:
+                # Using split("\n") because splitlines() will drop the last newline character
+                line_num += (len(content.decode('utf8').split("\n")) - 1)
+        
+        return line_num
 
 class RuleManager:
 
@@ -641,7 +660,7 @@ class RuleManager:
                 self._ignore_filter.disable(rule.strip(), line_num)
 
     def visit_file_lines(self, from_line:int, to_line:int, source_lines):
-        """Calls visit_file_line(pos, line) once for each line from 'from_line' to 'to_line'
+        """Calls visit_file_line(pos, line) once for each line from 'from_line' to 'to_line' (inclusive)
            on any rule providing the visit_file_line method.
         """
 
@@ -707,23 +726,21 @@ class RuleManager:
             context = ET.iterwalk(root, events=("start", "end"))
 
             for event,elem in context:
-                line_num, col_num = srcml.get_row_col(elem, event)
+                srcml_xml_line = srcml.get_xml_line(elem, event)
 
-                if line_num > element_line:
-                    element_line = line_num
+                if srcml_xml_line > element_line:
+                    element_line = srcml_xml_line
 
                 if elem.tag == "{http://www.srcML.org/srcML/src}unit":
                     if event == "start":
-                        pos = LogFilePosition(1, col_num)
+                        pos = LogFilePosition(1, -1)
                         self.visit_xml(pos, elem, event)
                     if event == "end":
                         self.visit_file_lines(next_line, len(source_lines), source_lines)
                         next_line = len(source_lines) + 1
                         # unit tag doesn't have position encoding but it is always at
                         # the end. Thus, make its reported line the last line of the file.
-                        element_line = len(source_lines)
-
-                        pos = LogFilePosition(element_line, col_num)
+                        pos = LogFilePosition(len(source_lines), -1)
                         self.visit_xml(pos, elem, event)
                 else:
                     # Process line visitors of any lines not visited yet up to
@@ -731,7 +748,8 @@ class RuleManager:
                     self.visit_file_lines(next_line, element_line, source_lines)
                     next_line = element_line + 1
 
-                    pos = LogFilePosition(element_line, col_num)
+                    srcml_pos_line, srcml_pos_col = srcml.get_pos_row_col(elem, event)
+                    pos = LogFilePosition(srcml_pos_line, srcml_pos_col)
                     self.visit_xml(pos, elem, event)
         else:
             self.visit_file_lines(1, len(source_lines), source_lines)
