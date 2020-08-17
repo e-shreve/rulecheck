@@ -1,24 +1,21 @@
 # Rule Check
-Rule Check (aka rulecheck or source rule check) is a command line system for running custom static analysis rules on C, C++, and Java code. The original intended use case is for checking a code base against coding style or coding standard rules. 
+Rule Check (aka rulecheck or source rule check) is a command line system for running custom static analysis rules on C, C++, C#, and Java code. The original use case is checking a code base against coding style or coding standard rules. 
 
 Rule Check uses [srcml](https://www.srcml.org/) to parse the source code into XML and then invokes each rule's methods as appropriate to allow the rules to inspect any source code element of interest to the rule. This architecture minimizes duplicate parsing time and allows rule authors to focus on their rule logic instead of the logic needed to parse source code.
 
 Features include:
-* Support for parsing C, C++, Java source
-* Supports parsing C and C++ prior to preprocessor execution (parses code in the form the developer uses)
-* Supports custom rules
+* Parsing C, C++, C#, and Java source via srcml
+* Parsing C and C++ prior to preprocessor execution (thus viewing code as developers do)
+* Custom rules
   * Groups of rules can be created and published in 'rulepacks'
   * Projects can have custom rules within their own code base (no need to publish/install rules)
   * Rules can have their own custom settings. Rule check will provide the settings to the rule via its standard config file format.
-* Supports multiple config file inputs
+* Multiple config file inputs
   * Projects can use an hierarchical set of configurations allowing organizations to provide rules across projects
+* Supression of errors and warnings without modifying source code via ignore list input
+* Supression of errors and warnings with source code comments
 * Standardized output format for all rules
-* Supports ignore list input to ignore specific rule violations in a code base without modifying the code
-* Source to be analyzed specified in glob format
-
-Features to be developed include:
-* Ability to ignore rule violations by using comments in the source code to turn off/on rules.
-
+* Speicifcation of sources to be analyzed via glob format or via stdin
 
 ___
 
@@ -45,17 +42,16 @@ pip install .
 ##### Python
 Python 3.8 or greater is required.
 
-##### lxml
-The python xml library lxml is used over the built-in ElementTree library due to speed and additional functionality such as the ability
-to obtain the line number of tag from the source XML file. lxml has been available in Wheel install format since 2016
-and thus should not present an issue for users. lxml will be installed by pip automatically when insalling rulecheck.
-
 ##### srcml
 srcml is a source code to xml parser that can parse C, C++, C Preprocessor, C#, and Java code. The pip install of rulecheck will not
 install srcml. Find installation files at https://www.srcml.org/ and install on your system.
 Version required: 1.0.0 or greater.
 For easiest use, srcml should be on the path. Otherwise, the path to srcml can be provided when starting rulecheck from the command line.
 
+##### lxml
+The python xml library lxml is used over the built-in ElementTree library due to speed and additional functionality such as the ability
+to obtain the line number of tag from the source XML file. lxml has been available in Wheel install format since 2016
+and thus should not present an issue for users. lxml will be installed by pip automatically when insalling rulecheck.
 
 ___
 ### <a id="running">Running and Configuration
@@ -67,7 +63,7 @@ rulecheck --help
 
 #### Selecting Rules
 
-Rule selection is done by specifying one or more rule configuration files on the command line, using the -c or --config option. To specify more than one configuration file, use the config option on the command line once for each configuration file to be read.
+Rules are selected by specifying one or more rule configuration files on the command line, using the -c or --config option. To specify more than one configuration file, use the config option on the command line once for each configuration file to be read.
 
 Note that rule selection is additive across all configuration files specified. Thus, if config1.json activates ruleA and config2.json activates RuleB then both RuleA and RuleB will be active.
 
@@ -126,7 +122,7 @@ Note that rules *may* support being specified multiple times. For example, a rul
 }
 ```
 
-Some rules *may*, however, throw an error if configured more than once. Consult the documentation for a rule for usage instructions. 
+Some rules *may*, however, throw an error if configured more than once. Consult the documentation of a rule for specific usage instructions. 
 
 To prevent running the same rule multiple times, rulecheck will not load a rule twice if it has the *exact* same settings. In the following run, rulecheck will only load the bannedword rule twice, despite it being specified three times.
 
@@ -236,7 +232,7 @@ ___
 There are two methods for telling rulecheck to ignore a rule finding for a particular file, line, or element of a file.
 The first is to use comments in the source code file to instruct rulecheck on when to disable and reenable a rule.
 The second is to use an "ignore list" which allows one to provide this information without modifying the source files.
-However, the ignore list method may require additional maintenance as the source code is changes compared to the use of
+However, the ignore list method may require additional maintenance as the source code is changed compared to the use of
 comments in the source code.
 
 ### Source Comment Commands to Rulecheck
