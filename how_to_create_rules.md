@@ -81,9 +81,9 @@ In addition to those parsing related methods, the following methods may be calle
    * This is the standard object initialization method called when an instance of the rule is created.
    * The settings value is a Python dictionary constructed from the 'settings' object of the configuration file provided on the command line.
    * This method should always call the parent class' init method: super().__init__()
-* is_whitespace_sensitive(self) -> bool
+* is_indentation_sensitive(self) -> bool
    * The Rule class defines this method and returns False.
-   * If a rule is sensitive to whitespace (whitespace can distinguish between passes, warnings, and errors) then this method should be overridden to return True. 
+   * If a rule is sensitive to whitespace indentation (whitespace can distinguish between passes, warnings, and errors) then this method should be overridden to return True. 
 
 #### Position Information
 
