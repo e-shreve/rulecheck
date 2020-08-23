@@ -8,5 +8,7 @@ class printRowsWithWord(rule.Rule):
         return rule.RuleType.LINE
 
     def visit_file_line(self, pos:rule.LogFilePosition, line:str):
-        if line.find("the") >= 0:
+        col = line.find("the")
+        if col >= 0:
+            pos.col = col
             self.log(rule.LogType.WARNING, pos, "use of the word " + 'the' + " : " + line.rstrip())

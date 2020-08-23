@@ -23,10 +23,7 @@ from lxml import etree as ET
 # Local imports
 from rulecheck import rule
 from rulecheck.rule import LogFilePosition
-
-
-__version__ = '0.5'
-
+from rulecheck import __version__
 
 
 #################################################
@@ -44,52 +41,57 @@ class IgnoreFileEntry(object):
         self._valid = False
         self._line_num = -1
         self._col_num = -1
+        self._hash = "NOHASH"
         
-        parts = line.split(sep=':')
+        parts = line.split(sep=': ')
         
-        if len(parts) < 5:
+        if len(parts) < 4:
             return
                     
-        # First value on line must be hash        
-        if len(parts[0]) == 32 and all(c in string.hexdigits for c in parts[0]):
-            self._hash = parts[0]
+        # First value on line must be hash
+        hash = parts[0].strip()
+        if len(hash) == 32 and all(c in string.hexdigits for c in hash):
+            self._hash = hash
         else:
             return
         
-        # Second value on line must be the filename
-        self._file_name = parts[1]
+        # Second value on line must be the filename with optional line and col information
+        file_info = parts[1]
+        file_info_parts = file_info.rsplit(':',2)
         
-        # Line and column numbers are optional. Thus,
-        # start tracking the next part of the line in a variable...
-        next_part = 2
-        
-        if parts[next_part].isdigit():
-            self._line_num = int(parts[next_part])
-            
-            next_part += 1
-            
-            # Column is only specified if there was a row
-            if parts[next_part].isdigit():
-                self._col_num = int(parts[next_part])
-                next_part += 1
-            
-        
-        if parts[next_part] == "ERROR":
+        if len(file_info_parts) >= 3:
+            if file_info_parts[1].isdigit():
+                if file_info_parts[2].isdigit():
+                    self._col_num = int(file_info_parts[2])
+                    self._line_num = int(file_info_parts[1])
+                    self._file_name = file_info_parts[0]
+            elif file_info_parts[2].isdigit():
+                self._line_num = int(file_info_parts[2])
+                self._file_name = file_info_parts[0] + ":" + file_info_parts[1]
+            else:
+                self._file_name = file_info_parts[0] + ":" + file_info_parts[1] + ":" + file_info_parts[2]
+        elif len(file_info_parts) == 2:
+            if file_info_parts[1].isdigit():
+                self._line_num = int(file_info_parts[1])
+                self._file_name = file_info_parts[0]
+            else:
+                self._file_name = file_info_parts[0] + ":" + file_info_parts[1]
+        else:
+            self._file_name = file_info_parts[0]
+
+        if parts[2] == "ERROR":
             self._log_type = rule.LogType.ERROR
-            next_part += 1
-        elif parts[next_part] == "WARNING":
+        elif parts[2] == "WARNING":
             self._log_type = rule.LogType.WARNING
-            next_part += 1
         else:
             return
         
-        self._rule_name = parts[next_part] 
-        next_part += 1
+        self._rule_name = parts[3]
                
-        if (next_part == len(parts) - 1):
-            self._message = parts[next_part]
+        if (4 == len(parts) - 1):
+            self._message = parts[4]
         else:
-            self._message = ':'.join(parts[next_part:])
+            self._message = ': '.join(parts[4:])
         
         self._valid = True
            
@@ -374,7 +376,7 @@ class Logger(object):
         if not self._ignore_filter or not self._ignore_filter.is_filtered(rule_name, pos.line, log_hash):
 
             if (self.show_hash()):
-                log_msg = log_msg + log_hash + ":"
+                log_msg = log_msg + log_hash + ": "
 
             log_msg = log_msg + file_name + ":"
 
@@ -383,7 +385,9 @@ class Logger(object):
             if (pos.col > 0):
                 log_msg = log_msg + str(pos.col) + ":"
 
-            log_msg = log_msg + adjusted_log_type.name + ":" + rule_name + ":" + msg.expandtabs(self.get_tab_size())
+            log_msg = log_msg + " "
+
+            log_msg = log_msg + adjusted_log_type.name + ": " + rule_name + ": " + msg.expandtabs(self.get_tab_size())
             print(log_msg)
 
             if adjusted_log_type == rule.LogType.ERROR:
