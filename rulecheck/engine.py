@@ -94,7 +94,7 @@ class IgnoreFileEntry(object):
             self._message = ': '.join(parts[4:])
         
         self._valid = True
-           
+
     def print(self):
         print("h: " + self.get_hash() + " f: " + self.get_file_name() + " l,c: " + str(self.get_line_num())+","+str(self.get_col_num()) + " t: " + str(self.get_log_level()) + " r: " + self.get_rule_name() + " m: " + self.get_message())
     
@@ -145,8 +145,7 @@ class IgnoreFilter(object):
                 for line in self._ignore_list_file_handle:
                     entry = IgnoreFileEntry(line)
                     
-                    if entry.is_valid() and entry.get_file_name() == file_name:
-                    
+                    if entry.is_valid() and str( pathlib.Path(entry.get_file_name()).as_posix() ) == str(pathlib.Path(file_name).as_posix()):
                         rule_name = entry.get_rule_name()
                         if rule_name not in self._rule_ignores:
                             self._rule_ignores[rule_name] = []
@@ -363,15 +362,17 @@ class Logger(object):
 
         log_msg = ""
 
+        # Use posix form for hash calculation for consistency across OSes.
+        file_name_posix = str(pathlib.Path(file_name).as_posix())
         log_hash = -1
         if (pos.line > 0 and pos.line < len(source_lines)):
             line_text = source_lines[pos.line-1]
             #print ("log against line text: " + line_text)
             if not include_indentation:
                 line_text = line_text.lstrip()
-            log_hash = hashlib.md5((file_name + rule_name + log_type.name + line_text).encode('utf-8')).hexdigest()
+            log_hash = hashlib.md5((file_name_posix + rule_name + log_type.name + line_text).encode('utf-8')).hexdigest()
         else:
-            log_hash = hashlib.md5((file_name + rule_name + log_type.name).encode('utf-8')).hexdigest()
+            log_hash = hashlib.md5((file_name_posix + rule_name + log_type.name).encode('utf-8')).hexdigest()
 
         if not self._ignore_filter or not self._ignore_filter.is_filtered(rule_name, pos.line, log_hash):
 
