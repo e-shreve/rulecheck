@@ -218,7 +218,7 @@ def test_file_open(rule_manager, mocker):
     rule_manager._rules_dict['rule1'] = [rule1]
     rule_manager._rules_dict['rule2'] = [rule2]
      
-    rule_manager.visit_file_open('./tests/src/path2/basic-utils/common.c')
+    rule_manager.visit_file_open_all_active_rules('./tests/src/path2/basic-utils/common.c')
     
     rule1.visit_file_open.assert_called_once_with(rule.LogFilePosition(-1,-1), './tests/src/path2/basic-utils/common.c')
     rule1.visit_file_open.assert_called_once_with(rule.LogFilePosition(-1,-1), './tests/src/path2/basic-utils/common.c')
@@ -283,7 +283,7 @@ def test_visit_xml(rule_manager, mocker):
     node.tag = "tag1"
     
     position = rule.LogFilePosition(1,5)
-    rule_manager.visit_xml(position, node, "start")
+    rule_manager.visit_xml_all_active_rules(position, node, "start")
     
     # Check that tag specific visit was called on Rule 1 with correct parameters and
     # 'any_other' was called rule 2 with correct parameters.
@@ -303,7 +303,7 @@ def test_visit_xml(rule_manager, mocker):
     
     node.tag = "tag2"
     
-    rule_manager.visit_xml(rule.LogFilePosition(1,5), node, "start")
+    rule_manager.visit_xml_all_active_rules(rule.LogFilePosition(1,5), node, "start")
 
     assert rule1.visit_xml_tag1_start.call_count == 1
     assert rule1.visit_any_other_xml_element_start.call_count == 1
@@ -311,7 +311,7 @@ def test_visit_xml(rule_manager, mocker):
     
     node.tag = "tag1"
     
-    rule_manager.visit_xml(rule.LogFilePosition(1,5), node, "end")
+    rule_manager.visit_xml_all_active_rules(rule.LogFilePosition(1,5), node, "end")
 
     assert rule1.visit_xml_tag1_start.call_count == 1
     assert rule1.visit_any_other_xml_element_start.call_count == 1
