@@ -21,7 +21,7 @@ setup(
     url='https://github.com/e-shreve/rulecheck',
     packages=find_packages(exclude=['tests']),
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 3 - Alpha',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
@@ -31,9 +31,10 @@ setup(
         'Programming Language :: C',
         'Programming Language :: C++',
         'Programming Language :: Java',
+        'Programming Language :: C#',
         'Topic :: Utilities'
     ],
-    python_required='>=3.5',
+    python_required='>=3.7',
     install_requires=[
           'lxml',
     ],
