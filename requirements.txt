@@ -1,1 +1,4 @@
-lxml
+-e .
+pytest
+pytest-mock
+pylint
