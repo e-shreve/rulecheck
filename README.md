@@ -1,4 +1,4 @@
-![Python package](https://github.com/e-shreve/rulecheck/workflows/Python%20package/badge.svg)
+![Python package](https://github.com/e-shreve/rulecheck/workflows/Python%20package/badge.svg)  ![Upload Python Package](https://github.com/e-shreve/rulecheck/workflows/Upload%20Python%20Package/badge.svg)
 
 # Rule Check
 Rule Check (aka rulecheck or source rule check) is a command line system for running custom static analysis rules on C, C++, C#, and Java code. The original use case is checking a code base against coding style or coding standard rules. 
