@@ -1,7 +1,9 @@
-import rulecheck
 import sys
+
 from setuptools import setup
 from setuptools import find_packages
+
+import rulecheck
 
 if sys.version_info.major < 3:
     sys.exit('Python < 3 is unsupported.')
@@ -18,6 +20,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     author="Erik Shreve",
+    author_email="e-shreve@users.noreply.github.com",
     url='https://github.com/e-shreve/rulecheck',
     packages=find_packages(exclude=['tests']),
     classifiers=[
@@ -42,5 +45,5 @@ setup(
         'console_scripts': [
             'rulecheck = rulecheck.engine:main',
         ],
-    },    
+    },
 )
