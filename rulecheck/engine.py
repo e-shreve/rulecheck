@@ -49,11 +49,11 @@ def create_parser():
     parser.add_argument("-c", "--config",
                         help="""config file. Specify the option multiple times to specify
                                 multiple config files.""",
-                        required=True, nargs=1, action="append", type=str)
+                        required=True, action="append", type=str)
     parser.add_argument("-r", "--rulepaths",
                         help="""path to rules. Specify the option multiple times to specify
                                 multiple paths.""",
-                        nargs=1, action="append", type=str)
+                        action="append", type=str)
     parser.add_argument("-g", "--generatehashes",
                         help="output messages with hash values used for ignore files",
                         action="store_true")
@@ -62,7 +62,7 @@ def create_parser():
     parser.add_argument("--register-ext",
                         help="""specify extension to language mappings used with srcml.
                                 --register-ext EXT=LANG""",
-                        nargs=1, action="append", type=str)
+                        action="append", type=str)
     # The srmclargs value must be quoted and start with a leading space because of this bug in
     # argparse: https://bugs.python.org/issue9334
     parser.add_argument("--srcmlargs",
@@ -152,7 +152,7 @@ def rulecheck(args) -> int:
     LOGGER.set_tab_size(args.tabs)
     LOGGER.set_show_hash(args.generatehashes)
     LOGGER.set_warnings_are_errors(args.Werror)
-    LOGGER.set_ignore_fitler(ignore_filter)
+    LOGGER.set_ignore_filter(ignore_filter)
     LOGGER.set_verbose(VERBOSE_ENABLED)
 
     Rule.set_logger(log_violation_wrapper)

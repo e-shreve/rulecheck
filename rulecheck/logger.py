@@ -186,4 +186,4 @@ def log_violation_wrapper(log_type:LogType, pos:LogFilePosition, msg:str,
     LOGGER.log_violation(log_type, pos, msg, include_indentation,
                          LOGGER.get_current_file().get_name(),
                          LOGGER.get_current_rule_name(),
-                         LOGGER.get_current_file().get_source_lines)
+                         LOGGER.get_current_file().get_lines())

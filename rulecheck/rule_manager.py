@@ -43,6 +43,7 @@ class RuleManager:
 
     def _add_rule_paths(self, rule_paths):
         if rule_paths:
+            print (rule_paths)
             for rule_path in rule_paths:
                 rule_path = str(pathlib.Path(rule_path).absolute())
                 if os.path.isdir(rule_path):
