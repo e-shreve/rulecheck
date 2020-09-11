@@ -58,7 +58,8 @@ class RuleManager:
 
     def _load_rule_set(self, rule_set):
         rules_loaded = list()
-
+        rules_skipped = list()
+        
         for rule in rule_set['rules']:
             try:
                 rule_full_name = rule['name']
@@ -74,11 +75,12 @@ class RuleManager:
 
                 rule_object = getattr(sys.modules[rule_full_name], rule_class_name)(settings)
 
+                identical_rule_exists = False
+
                 if rule_full_name not in self._rules_dict:
                     self._rules_dict[rule_full_name] = []
                     self._rules_dict[rule_full_name].append(rule_object)
                 else:
-                    identical_rule_exists = False
                     for loaded_rule in self._rules_dict[rule_full_name]:
                         if loaded_rule.get_settings() == rule_object.get_settings():
                             identical_rule_exists = True
@@ -86,15 +88,18 @@ class RuleManager:
                     if not identical_rule_exists:
                         self._rules_dict[rule_full_name].append(rule_object)
 
-                rule_location = os.path.abspath(rule_full_name)
+                rule_path = os.path.abspath(rule_full_name)
 
-                rules_loaded.append(rule_location)
+                if identical_rule_exists:
+                    rules_skipped.append(rule_path)
+                else:
+                    rules_loaded.append(rule_path)
 
             except Exception as exc:  #pylint: disable=broad-except
                 print("Could not load rule: " + rule_full_name)
                 print("Exception on attempt to load rule: " + str(exc))
 
-        return rules_loaded
+        return rules_loaded, rules_skipped
 
     def _set_current_rule_name(self, rule_name:str):
         self._current_rule_name = rule_name
@@ -111,11 +116,22 @@ class RuleManager:
                 with open(config_file) as file_stream:
                     rule_set = json.load(file_stream)
 
-                rules_loaded = self._load_rule_set(rule_set)
+                rules_loaded, rules_skipped = self._load_rule_set(rule_set)
 
                 seperator = '\n  '
-                self.print_verbose("From " + config_file + " loaded rules: " + seperator + \
-                            seperator.join(rules_loaded))
+                if rules_loaded:
+                    self.print_verbose("From " + config_file + " loaded " + \
+                                       str(len(rules_loaded)) + " rules: " + seperator + \
+                                       seperator.join(rules_loaded))
+
+                if rules_skipped:
+                    self.print_verbose("From " + config_file + " skipped " + \
+                                       str(len(rules_loaded)) + " rules already loaded: " + \
+                                       seperator +  seperator.join(rules_skipped))
+
+                if (not rules_loaded) and (not rules_skipped):
+                    self.print_verbose("From " + config_file + " no rules found to load.")
+
             except Exception:  #pylint: disable=broad-except
                 print("Could not open config file: " + config_file)
 
