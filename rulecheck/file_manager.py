@@ -1,4 +1,5 @@
 import glob
+from pathlib import Path
 import sys
 
 from rulecheck.file import File
@@ -40,6 +41,10 @@ class FileManager:
 
     def process_file(self, file_path:str):
         self._current_file = None
+
+        if Path(file_path).is_dir():
+            return
+
         try:
             file_stream = open(file_path, 'r', newline='')
             try:
