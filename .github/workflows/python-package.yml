@@ -34,7 +34,7 @@ jobs:
     - name: Install SRCML
       run: |
         curl -O http://131.123.42.38/lmcrs/v1.0.0/srcml_1.0.0-1_ubuntu18.04.deb
-        sudo apt install ./srcml_1.0.0-1_ubuntu18.04.deb
+        sudo apt --force-yes -V install ./srcml_1.0.0-1_ubuntu18.04.deb
     - name: Install package locally 
       run: |
         # Install to support running of integration tests that actualy run
