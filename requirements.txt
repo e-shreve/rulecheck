@@ -1,4 +1,5 @@
 -e .
 pytest
 pytest-mock
+pytest-console-scripts
 pylint

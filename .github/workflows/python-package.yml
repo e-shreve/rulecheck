@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.6, 3.7, 3.8]
 
     steps:
     - uses: actions/checkout@v2
@@ -31,6 +31,15 @@ jobs:
       run: |
         # stop the build if pylint scores too low
         pylint --rcfile=pylint.rc --fail-under=9.0 rulecheck/
+    - name: Install SRCML
+      run: |
+        curl -O http://131.123.42.38/lmcrs/v1.0.0/srcml_1.0.0-1_ubuntu18.04.deb
+        apt install srcml_1.0.0-1_ubuntu18.04.deb
+    - name: Install package locally 
+      run: |
+        # Install to support running of integration tests that actualy run
+        # the CLI via a subprocess.
+        pip install ./
     - name: Test with pytest
       run: |
         pytest
