@@ -14,7 +14,7 @@ class File():
         self._raw_srcml_bytes = raw_srcml_bytes
         self._srcml_etree_root = None
 
-        if self._raw_srcml_bytes is not None:
+        if self._raw_srcml_bytes:
             self._srcml_etree_root = ET.parse(io.BytesIO(self._raw_srcml_bytes))
 
     def get_lines(self):

@@ -71,33 +71,41 @@ class Srcml:
         if not file_extension or not self.can_read_extension(file_extension):
             return None
 
-        # Add quotes around filenames/paths with whitespace.
-        if True in [c in file_name for c in string.whitespace]:
-            if file_name.startswith(r'"') or file_name.startswith(r"'"):
-                file_name = r"'" + file_name + r"'"
 
-        # Build up command and arguments. Use shlex for posix (linux/mac).
-        # Custom handling for Windows since shlex doesn't handle Windows.
+
+        # Build up command and arguments. Use shell for posix (linux/mac), no shell for Windows.
+        shell = False
         srcml_cmd = [self._srcml_bin]
+
         if os.name == 'posix':
-            args = shlex.split(" ".join(self._srcml_args) + " " + "--language " +
-                               self._srcml_ext_mappings[file_extension] + " " + file_name)
-            srcml_cmd.extend(args)
+            shell = True
+
+            # Add quotes around filenames/paths with whitespace.
+            if True in [c in file_name for c in string.whitespace]:
+                if not (file_name.startswith(r'"') or file_name.startswith(r"'")):
+                    file_name = r"'" + file_name + r"'"
+
+            srcml_cmd = self._srcml_bin + " " + " ".join(self._srcml_args) + \
+                        " --language " + self._srcml_ext_mappings[file_extension] + \
+                        " " + file_name
+
+            self.print_verbose("Calling srcml: " + srcml_cmd)
         elif os.name == 'nt':
             srcml_cmd.extend(self._srcml_args)
             srcml_cmd.extend(["--language", self._srcml_ext_mappings[file_extension]])
             srcml_cmd.append(file_name)
+            self.print_verbose("Calling srcml: " + " ".join(srcml_cmd))
         else:
             raise ValueError('Unexpected or unsupported OS: ' + os.name)
 
-        self.print_verbose("Calling srcml: " + " ".join(srcml_cmd))
-        child = subprocess.Popen(srcml_cmd, shell=True,
+
+        child = subprocess.Popen(srcml_cmd, shell=shell,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
 
         stdout, stderr = child.communicate()
 
-        if child.returncode != 0:
+        if child.returncode != 0 or stderr:
             print("error calling srcml, return code: " + str(child.returncode) + " stderr: ")
             print(stderr.decode(sys.stderr.encoding))
             return None

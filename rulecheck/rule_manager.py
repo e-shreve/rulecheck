@@ -59,7 +59,7 @@ class RuleManager:
     def _load_rule_set(self, rule_set):
         rules_loaded = list()
         rules_skipped = list()
-        
+
         for rule in rule_set['rules']:
             try:
                 rule_full_name = rule['name']
