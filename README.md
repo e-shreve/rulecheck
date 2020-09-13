@@ -101,7 +101,12 @@ At the top level, an array named "rules" must be provided. Each member of this a
 Each rule object must consist of a "name" string. The name may contain '.' characters which are used to differentiate between 
 collections of rules known as rulepacks.
 
-Optionally, a rule object may include a settings object. The expected/supported content of the settings object will depend on the rule. 
+Optionally, a rule object may include a settings object. The full list of settings supported depends
+on the particular rule. However, all rules support the following settings:
+- werror: if value evaluates as true, it promotes all WARNINGS to ERRORS
+- verbose: if value evaluates as true, the rule may provide additional output on stdout
+
+True values are y, yes, t, true, on and 1; false values are n, no, f, false, off and 0. 
 
 Note that rules *may* support being specified multiple times. For example, a rule for finding banned terms or words could support multiple instantiations each with a different word or term specified:
 

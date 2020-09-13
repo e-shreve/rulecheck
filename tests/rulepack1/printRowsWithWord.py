@@ -10,6 +10,8 @@ class printRowsWithWord(rule.Rule):
         except Exception:  #pylint: disable=broad-except
             self._word = "the"
 
+        self.print_verbose("printRowsWithWord created for word: " + self._word)
+
     def get_rule_type(self)->rule.RuleType:
         return rule.RuleType.LINE
 
