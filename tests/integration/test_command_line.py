@@ -31,35 +31,35 @@ def test_all_the_things(script_runner):
     """
     result = script_runner.run('rulecheck',
                                '-v',
-                               '-c', '.\\tests\\integration\\rules1.json',
-                               '-c', '.\\tests\\integration\\rules2.json',
-                               '--rulepaths', '.\\tests',
-                               r'.\tests\src\basic utils\main.c',
-                               r'.\tests\src\network\**\*')
+                               '-c', './tests/integration/rules1.json',
+                               '-c', './tests/integration/rules2.json',
+                               '--rulepaths', './tests',
+                               r'./tests/src/basic utils/main.c',
+                               r'./tests/src/network/**/*')
 
     assert result.returncode == 3 # 3 indicates warnings found but no errors
 
     # Check that rule path was added:
-    assert re.search(r'Adding to sys\.path: [^\n]*\\tests', result.stdout)
+    assert re.search(r'Adding to sys\.path: [^\n]*[/\\]tests', result.stdout)
 
     # Check loading of both config, with appropriate rules loaded and skipped
-    assert re.search(r'From \.\\tests\\integration\\rules1\.json loaded 3 rules: \n[^\n]*\\rulepack1\.printFilename\n[^\n]*\\rulepack1\.printRowsWithWord\n[^\n]*\\rulepack1\.printRowsWithWord', result.stdout)  #pylint: disable=line-too-long
-    assert re.search(r'From \.\\tests\\integration\\rules2\.json loaded 2 rules: \n[^\n]*\\rulepack1\.printRowsWithWord\n[^\n]*\\rulepack1\.printLanguage', result.stdout) #pylint: disable=line-too-long
-    assert re.search(r'From \.\\tests\\integration\\rules2\.json skipped 2 rules already loaded: \n[^\n]*\\rulepack1\.printFilename\n[^\n]*\\rulepack1\.printRowsWithWord', result.stdout) #pylint: disable=line-too-long
+    assert re.search(r'From \.[/\\]tests[/\\]integration[/\\]rules1\.json loaded 3 rules: \n[^\n]*[/\\]rulepack1\.printFilename\n[^\n]*[/\\]rulepack1\.printRowsWithWord\n[^\n]*[/\\]rulepack1\.printRowsWithWord', result.stdout)  #pylint: disable=line-too-long
+    assert re.search(r'From \.[/\\]tests[/\\]integration[/\\]rules2\.json loaded 2 rules: \n[^\n]*[/\\]rulepack1\.printRowsWithWord\n[^\n]*[/\\]rulepack1\.printLanguage', result.stdout) #pylint: disable=line-too-long
+    assert re.search(r'From \.[/\\]tests[/\\]integration[/\\]rules2\.json skipped 2 rules already loaded: \n[^\n]*[/\\]rulepack1\.printFilename\n[^\n]*[/\\]rulepack1\.printRowsWithWord', result.stdout) #pylint: disable=line-too-long
 
 
     # Check that faulty rule (that throws exception) is noted:
-    assert "Could not load rule: rulepack2.badRuleThrowsException"  in result.stdout
-    assert "Exception on attempt to load rule: I always raise this." in result.stdout
+    assert 'Could not load rule: rulepack2.badRuleThrowsException'  in result.stdout
+    assert 'Exception on attempt to load rule: I always raise this.' in result.stdout
 
     # Check that all files were processed
-    assert r"Total Files Checked: 5" in result.stdout
-    assert r"Opened file for checking: .\tests\src\basic utils\main.c" in result.stdout
-    assert r"Opened file for checking: .\tests\src\network\err.c" in result.stdout
-    assert r"Opened file for checking: .\tests\src\network\tcp\tcp-sink-server.c" in result.stdout
-    assert r"Opened file for checking: .\tests\src\network\udp\udp-client.c" in result.stdout
-    assert r"Opened file for checking: .\tests\src\network\udp\udp-server.c" in result.stdout
+    assert r'Total Files Checked: 5' in result.stdout
+    assert re.search(r'Opened file for checking: .[/\\]tests[/\\]src[/\\]basic utils[/\\]main.c', result.stdout)                  #pylint: disable=line-too-long
+    assert re.search(r'Opened file for checking: .[/\\]tests[/\\]src[/\\]network[/\\]err.c', result.stdout)                       #pylint: disable=line-too-long
+    assert re.search(r'Opened file for checking: .[/\\]tests[/\\]src[/\\]network[/\\]tcp[/\\]tcp-sink-server.c', result.stdout)   #pylint: disable=line-too-long
+    assert re.search(r'Opened file for checking: .[/\\]tests[/\\]src[/\\]network[/\\]udp[/\\]udp-client.c', result.stdout)        #pylint: disable=line-too-long
+    assert re.search(r'Opened file for checking: .[/\\]tests[/\\]src[/\\]network[/\\]udp[/\\]udp-server.c', result.stdout)        #pylint: disable=line-too-long
 
     # Check summary results
-    assert r"Total Warnings (ignored): 14(0)" in result.stdout
-    assert r"Total Errors (ignored): 0(0)" in result.stdout
+    assert r'Total Warnings (ignored): 14(0)' in result.stdout
+    assert r'Total Errors (ignored): 0(0)' in result.stdout
