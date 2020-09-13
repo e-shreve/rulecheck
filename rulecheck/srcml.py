@@ -7,13 +7,11 @@
 
 import os
 import shlex
-import string
 import subprocess
 import sys
 
 # 3rd party imports
 from lxml import etree as ET
-from xxsubtype import bench
 
 #pylint: disable=missing-function-docstring
 #pylint: disable=too-many-arguments
@@ -73,33 +71,25 @@ class Srcml:
 
 
 
-        # Build up command and arguments. Use shell for posix (linux/mac), no shell for Windows.
-        shell = False
-        srcml_cmd = [self._srcml_bin]
+        # Build up command and arguments. Use shlex for posix (linux/mac).
+        srcml_cmd = []
 
         if os.name == 'posix':
-            shell = True
-
-            # Add quotes around filenames/paths with whitespace.
-            if True in [c in file_name for c in string.whitespace]:
-                if not (file_name.startswith(r'"') or file_name.startswith(r"'")):
-                    file_name = r"'" + file_name + r"'"
-
-            srcml_cmd = self._srcml_bin + " " + " ".join(self._srcml_args) + \
+            srcml_cmd = shlex.quote(self._srcml_bin) + " " + \
+                        " ".join([shlex.quote(a) for a in self._srcml_args]) + \
                         " --language " + self._srcml_ext_mappings[file_extension] + \
-                        " " + file_name
-
-            self.print_verbose("Calling srcml: " + srcml_cmd)
+                        " " + shlex.quote(file_name)
+            srcml_cmd = shlex.split(srcml_cmd)
         elif os.name == 'nt':
+            srcml_cmd = [self._srcml_bin]
             srcml_cmd.extend(self._srcml_args)
             srcml_cmd.extend(["--language", self._srcml_ext_mappings[file_extension]])
             srcml_cmd.append(file_name)
-            self.print_verbose("Calling srcml: " + " ".join(srcml_cmd))
         else:
             raise ValueError('Unexpected or unsupported OS: ' + os.name)
 
-
-        child = subprocess.Popen(srcml_cmd, shell=shell,
+        self.print_verbose("Calling srcml: " + " ".join(srcml_cmd))
+        child = subprocess.Popen(srcml_cmd, shell=False,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
 
