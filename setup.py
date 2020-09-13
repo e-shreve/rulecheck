@@ -1,11 +1,14 @@
-import rulecheck
 import sys
+
 from setuptools import setup
 from setuptools import find_packages
 
-if sys.version_info.major < 3:
-    sys.exit('Python < 3 is unsupported.')
+import rulecheck
 
+if sys.version_info.major < 3:
+    sys.exit('Python < 3.6 is unsupported.')
+if sys.version_info.minor < 6:
+    sys.exit('Python < 3.6 is unsupported.')
 
 with open('README.md', encoding='utf8') as file:
     long_description = file.read()
@@ -18,6 +21,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     author="Erik Shreve",
+    author_email="e-shreve@users.noreply.github.com",
     url='https://github.com/e-shreve/rulecheck',
     packages=find_packages(exclude=['tests']),
     classifiers=[
@@ -34,7 +38,7 @@ setup(
         'Programming Language :: C#',
         'Topic :: Utilities'
     ],
-    python_required='>=3.7',
+    python_required='>=3.6',
     install_requires=[
           'lxml',
     ],
@@ -42,5 +46,5 @@ setup(
         'console_scripts': [
             'rulecheck = rulecheck.engine:main',
         ],
-    },    
+    },
 )

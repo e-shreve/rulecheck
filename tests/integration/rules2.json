@@ -1,0 +1,22 @@
+{
+  "rules": [
+    {
+       "name" : "rulepack1.printFilename"
+    },
+    {
+       "name" : "rulepack1.printRowsWithWord",
+       "settings" : {
+          "word" : "tcp"
+       }
+    },
+    {
+       "name" : "rulepack1.printRowsWithWord",
+       "settings" : {
+          "word" : "not"
+       }
+    },
+    {
+       "name" : "rulepack1.printLanguage"
+    }
+  ]
+}
