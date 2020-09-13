@@ -1,6 +1,8 @@
 import sys
 
-__version__ = '0.5.5.0'
+__version__ = '0.6.0'
 
-if sys.version_info[0] < 3:
-    raise ImportError('Python < 3 is unsupported.')
+if sys.version_info.major < 3:
+    sys.exit('Python < 3.6 is unsupported.')
+if sys.version_info.minor < 6:
+    sys.exit('Python < 3.6 is unsupported.')
