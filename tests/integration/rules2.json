@@ -6,7 +6,8 @@
     {
        "name" : "rulepack1.printRowsWithWord",
        "settings" : {
-          "word" : "tcp"
+          "word" : "tcp",
+          "werror": "on"
        }
     },
     {

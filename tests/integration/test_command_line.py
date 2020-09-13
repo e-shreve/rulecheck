@@ -28,6 +28,8 @@ def test_all_the_things(script_runner):
     6. Tests that a rule throwing an exception during file processing results in an Error logged
        but the processing continues.
     7. Confirms rule path setting operation.
+    8. Confirms werror rule-level setting (not command line level setting)
+    9. Confirms verbose rule-level setting
     """
     result = script_runner.run('rulecheck',
                                '-v',
@@ -37,7 +39,7 @@ def test_all_the_things(script_runner):
                                r'./tests/src/basic utils/main.c',
                                r'./tests/src/network/**/*')
 
-    assert result.returncode == 3 # 3 indicates warnings found but no errors
+    assert result.returncode == 2 # 2 indicates error level violations found
 
     # Check that rule path was added:
     assert re.search(r'Adding to sys\.path: [^\n]*[/\\]tests', result.stdout)
@@ -60,6 +62,10 @@ def test_all_the_things(script_runner):
     assert re.search(r'Opened file for checking: .[/\\]tests[/\\]src[/\\]network[/\\]udp[/\\]udp-client.c', result.stdout)        #pylint: disable=line-too-long
     assert re.search(r'Opened file for checking: .[/\\]tests[/\\]src[/\\]network[/\\]udp[/\\]udp-server.c', result.stdout)        #pylint: disable=line-too-long
 
-    # Check summary results
-    assert r'Total Warnings (ignored): 14(0)' in result.stdout
-    assert r'Total Errors (ignored): 0(0)' in result.stdout
+    # Check per-rule verbose worked
+    assert r'printRowsWithWord created for word: udp' in result.stdout
+    assert r'printRowsWithWord created for word: tcp' not in result.stdout
+
+    # Check summary results. Expect one error, which would be from using a per-rule werror setting
+    assert r'Total Warnings (ignored): 13(0)' in result.stdout
+    assert r'Total Errors (ignored): 1(0)' in result.stdout

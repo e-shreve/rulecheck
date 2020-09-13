@@ -119,8 +119,8 @@ The log method has the signature:
 There are two LogType values: ERROR and WARNING. Example calls:
 
 ```Python
-self.log(rule.LogType.ERROR, pos, "String explaining error")
-self.log(rule.LogType.WARNING, pos, "String explaining warning")
+log(rule.LogType.ERROR, pos, "String explaining error")
+log(rule.LogType.WARNING, pos, "String explaining warning")
 
 ```
 
@@ -140,9 +140,26 @@ Additional topics to cover in this section:
 - [ ] document to throw KeyError if required setting is not present or a setting value is not valid.
 - [ ] document that rules should default their settings to something reasonable if possible
 
+#### Standard Settings
+
+The following boolean settings are automatically provided and implemented for all rules:
+- werror: if value is True, it promotes all WARNINGS to ERRORS
+- verbose: if value is True, the [print_verbose(str)](#debug-printing) method will print to stdout
+
+True values are y, yes, t, true, on and 1; false values are n, no, f, false, off and 0.
+
 #### Activating and Deactivating Rules
 
 - [ ] to be written
+
+#### Debug Printing
+
+The Rule object includes an instance method: print_verbose(message:str). Use this method to print
+debug or other helpful information to stdout. The rule must have its [verbose](#standard-settings)
+setting enabled for this method to actually print.
+NOTE: The print_verbose method is *not* a substitution for the log method. 
+Do *not* use this method to report rule violations.
+
 
 ___
 ##### Tips
