@@ -6,11 +6,14 @@
 
 
 import os
+import shlex
+import string
 import subprocess
 import sys
 
 # 3rd party imports
 from lxml import etree as ET
+from xxsubtype import bench
 
 #pylint: disable=missing-function-docstring
 #pylint: disable=too-many-arguments
@@ -68,14 +71,26 @@ class Srcml:
         if not file_extension or not self.can_read_extension(file_extension):
             return None
 
-        srcml_cmd = [self._srcml_bin]
-        srcml_cmd.extend(self._srcml_args)
+        # Add quotes around filenames/paths with whitespace.
+        if True in [c in file_name for c in string.whitespace]:
+            if file_name.startswith(r'"') or file_name.startswith(r"'"):
+                file_name = r"'" + file_name + r"'"
 
-        srcml_cmd.extend(["--language", self._srcml_ext_mappings[file_extension]])
-        srcml_cmd.append(file_name)
+        # Build up command and arguments. Use shlex for posix (linux/mac).
+        # Custom handling for Windows since shlex doesn't handle Windows.
+        srcml_cmd = [self._srcml_bin]
+        if os.name == 'posix':
+            args = shlex.split(" ".join(self._srcml_args) + " " + "--language " +
+                               self._srcml_ext_mappings[file_extension] + " " + file_name)
+            srcml_cmd.extend(args)
+        elif os.name == 'nt':
+            srcml_cmd.extend(self._srcml_args)
+            srcml_cmd.extend(["--language", self._srcml_ext_mappings[file_extension]])
+            srcml_cmd.append(file_name)
+        else:
+            raise ValueError('Unexpected or unsupported OS: ' + os.name)
 
         self.print_verbose("Calling srcml: " + " ".join(srcml_cmd))
-
         child = subprocess.Popen(srcml_cmd, shell=True,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
