@@ -32,7 +32,7 @@ To learn how to write your own rules, see [how to create rules](how_to_create_ru
 ___
 ### Installation
 
-Ensure Python 3.8 or greater is present on the system (see below) and then run:
+Ensure Python 3.6 or greater is present on the system (see below) and then run:
 ```
 git clone https://github.com/e-shreve/rulecheck
 cd rulecheck
@@ -42,7 +42,7 @@ pip install .
 #### Dependencies
 
 ##### Python
-Python 3.8 or greater is required.
+Python 3.6 or greater is required.
 
 ##### srcml
 srcml is a source code to xml parser that can parse C, C++, C Preprocessor, C#, and Java code. The pip install of rulecheck will not
