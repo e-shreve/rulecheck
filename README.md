@@ -32,11 +32,9 @@ To learn how to write your own rules, see [how to create rules](how_to_create_ru
 ___
 ### Installation
 
-Ensure Python 3.6 or greater is present on the system (see below) and then run:
+Ensure Python 3.6 or greater and pip are present on the system (see below) and then run:
 ```
-git clone https://github.com/e-shreve/rulecheck
-cd rulecheck
-pip install .
+pip install rulecheck
 ```
 
 #### Dependencies

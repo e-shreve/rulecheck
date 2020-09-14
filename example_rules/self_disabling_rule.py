@@ -13,15 +13,15 @@
 
 # The second is when a rule has finished checking for compliance
 # before the end of the file. For example, a rule requiring that
-# files begin with a comment containing certain content can disable 
-# itself once it has determined if the rule was violated or not. 
+# files begin with a comment containing certain content can disable
+# itself once it has determined if the rule was violated or not.
 # Again, the rule logic doesn't need to be concerned with avoiding
 # logging duplicate messages since it won't be called again until the
 # next file begins processing.
-# 
+#
 
-from rulecheck import rule
 from lxml import etree as ET
+from rulecheck import rule
 
 class self_disabling_rule(rule.Rule):
 
@@ -29,22 +29,22 @@ class self_disabling_rule(rule.Rule):
         return rule.RuleType.SRCML
 
     def visit_xml_comment_start(self, pos:rule.LogFilePosition, element : ET.Element):
-        if not "copyright" in element.text: 
+        if not "copyright" in element.text:
             # Don't report a row or col number in the log since
             # the problem is not at a particular location in the file.
             pos.row = -1
-            pos.col = -1         
+            pos.col = -1
             self.log(rule.LogType.ERROR, pos, "File does not start with a copyright comment.")
-                
+
         self.set_inactive()
-                
+
     def visit_any_other_xml_element_start(self, pos:rule.LogFilePosition, element : ET.Element):
         # Don't report a row or col number in the log since
         # the problem is not at a particular location in the file.
         pos.row = -1
         pos.col = -1
         self.log(rule.LogType.ERROR, pos, "File does not start with a copyright comment.")
-        
+
         # Try commenting out this line and see how the logging output changes on files
         # that have no comments.
         self.set_inactive()
