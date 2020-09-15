@@ -53,7 +53,8 @@ starting rulecheck from the command line.
 ##### lxml
 The python xml library lxml is used over the built-in ElementTree library due to speed and additional functionality such as the ability
 to obtain the line number of tag from the source XML file. lxml has been available in Wheel install format since 2016
-and thus should not present an issue for users. lxml will be installed by pip automatically when insalling rulecheck.
+and thus should not present an issue for users. lxml will be installed by pip automatically when
+installing rulecheck.
 
 ___
 ### <a id="running">Running and Configuration
