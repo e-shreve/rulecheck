@@ -32,11 +32,9 @@ To learn how to write your own rules, see [how to create rules](how_to_create_ru
 ___
 ### Installation
 
-Ensure Python 3.6 or greater is present on the system (see below) and then run:
+Ensure [srcml](#srcml), Python 3.6 or greater, and pip are present on the system and then run:
 ```
-git clone https://github.com/e-shreve/rulecheck
-cd rulecheck
-pip install .
+pip install rulecheck
 ```
 
 #### Dependencies
@@ -45,15 +43,18 @@ pip install .
 Python 3.6 or greater is required.
 
 ##### srcml
-srcml is a source code to xml parser that can parse C, C++, C Preprocessor, C#, and Java code. The pip install of rulecheck will not
-install srcml. Find installation files at https://www.srcml.org/ and install on your system.
+srcml is a source code to xml parser that can parse C, C++, C Preprocessor, C#, and Java code. 
+The pip install of rulecheck will not install srcml. Find installation files at 
+https://www.srcml.org/ and install on your system.
 Version required: 1.0.0 or greater.
-For easiest use, srcml should be on the path. Otherwise, the path to srcml can be provided when starting rulecheck from the command line.
+For easiest use, srcml should be on the path. Otherwise, the path to srcml can be provided when
+starting rulecheck from the command line.
 
 ##### lxml
 The python xml library lxml is used over the built-in ElementTree library due to speed and additional functionality such as the ability
 to obtain the line number of tag from the source XML file. lxml has been available in Wheel install format since 2016
-and thus should not present an issue for users. lxml will be installed by pip automatically when insalling rulecheck.
+and thus should not present an issue for users. lxml will be installed by pip automatically when
+installing rulecheck.
 
 ___
 ### <a id="running">Running and Configuration

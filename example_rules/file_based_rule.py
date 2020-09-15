@@ -11,18 +11,18 @@ class file_based_rule(rule.Rule):
     # the line or xml visit methods.
     def get_rule_type(self)->rule.RuleType:
         return rule.RuleType.FILE
-    
+
     # visit_file_open is called when a file is first opened for processing.
-    def visit_file_open(self, pos:rule.LogFilePosition, fileName:str):
-        # This shows how an ERROR can be logged. Of course one would want to 
+    def visit_file_open(self, pos:rule.LogFilePosition, file_name:str):
+        # This shows how an ERROR can be logged. Of course one would want to
         # implement some logic instead of logging an error on every file opened.
-        self.log(rule.LogType.ERROR, pos, "Visited file: " + fileName)
-        
+        self.log(rule.LogType.ERROR, pos, "Visited file: " + file_name)
+
     # visit_file_close is called when a file is first opened for processing.
-    def visit_file_close(self, pos:rule.LogFilePosition, fileName:str):
+    def visit_file_close(self, pos:rule.LogFilePosition, file_name:str):
         # This shows how a WARNING can be logged.
-        self.log(rule.LogType.WARNING, pos, "Done with file: " + fileName)
-        
+        self.log(rule.LogType.WARNING, pos, "Done with file: " + file_name)
+
     # The following methods should not be defined in this rule
     # since this is a FILE based rule:
     # visit_line
