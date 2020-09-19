@@ -5,7 +5,7 @@ name: Python package
 
 on:
   push:
-    branches: [ master, feature/py37_and_test_improvements ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
@@ -23,6 +23,15 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+        
+    - name: Cache srcml
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-node-modules
+      with:
+        path: ~/srcml_1.0.0-1_ubuntu18.04.deb
+        key: srcml_1.0.0-1_ubuntu18.04
+        
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -33,7 +42,7 @@ jobs:
         pylint --rcfile=pylint.rc --fail-under=9.0 rulecheck/
     - name: Install SRCML
       run: |
-        curl -O http://131.123.42.38/lmcrs/v1.0.0/srcml_1.0.0-1_ubuntu18.04.deb
+        test ! -e ./srcml_1.0.0-1_ubuntu18.04.deb && curl -O http://131.123.42.38/lmcrs/v1.0.0/srcml_1.0.0-1_ubuntu18.04.deb
         sudo apt --force-yes -V install ./srcml_1.0.0-1_ubuntu18.04.deb
     - name: Install package locally 
       run: |
