@@ -29,8 +29,8 @@ jobs:
       env:
         cache-name: cache-node-modules
       with:
-        path: ~/srcml_1.0.0-1_ubuntu18.04.deb
-        key: srcml_1.0.0-1_ubuntu18.04
+        path: ./srcml_1.0.0-1_ubuntu18.04.deb
+        key: v1_srcml_1.0.0-1_ubuntu18.04
         
     - name: Install dependencies
       run: |
