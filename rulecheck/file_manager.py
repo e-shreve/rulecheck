@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 
 from rulecheck.file import File
+from rulecheck.ignore import IgnoreFile
 from rulecheck.rule_manager import RuleManager
 from rulecheck.srcml import Srcml
 from rulecheck.logger import Logger
@@ -21,6 +22,10 @@ class FileManager:
         self._current_file = None
         self._file_count = 0
         self.verbose = verbose
+        self._ignore_file_out = None
+
+    def set_ignore_file_out(self, ignore_file_out:IgnoreFile):
+        self._ignore_file_out = ignore_file_out
 
     def print_verbose(self, message:str):
         if self.verbose:
@@ -56,6 +61,8 @@ class FileManager:
                 self._rules.run_rules_on_file(self._current_file)
             finally:
                 file_stream.close()
+                if self._ignore_file_out:
+                    self._ignore_file_out.flush()
         except (IOError, OSError) as exc:
             self.log_file_exception("Could not open file! See stderr.", exc, file_path)
 

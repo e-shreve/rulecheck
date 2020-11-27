@@ -1,5 +1,6 @@
 # Local imports
 from rulecheck.file import File
+from rulecheck.ignore import IgnoreFile
 from rulecheck.ignore import IgnoreFilter
 from rulecheck.ignore import get_ignore_hash
 from rulecheck.rule import LogType
@@ -30,6 +31,7 @@ class Logger:
         self._total_ignored_errors = 0
         self._current_file = None
         self._current_rule_name = "rulecheck"
+        self._ignore_file_out = None
 
     def set_verbose(self, verbose:bool):
         self._verbose = verbose
@@ -42,6 +44,9 @@ class Logger:
 
     def set_current_rule_name(self, rulename:str):
         self._current_rule_name = rulename
+
+    def set_ignore_file_out(self, ignore_file_out:IgnoreFile):
+        self._ignore_file_out = ignore_file_out
 
     def get_current_file(self) -> File:
         return self._current_file
@@ -109,7 +114,7 @@ class Logger:
         """Log function for violations
 
         Each violation is logged as follows (with items in [] optional based on logging settings:
-        [hash of line]:filename:[line]:[col]:LogType:Rule Name:Log Message
+        filename:[line]:[col]:LogType:Rule Name:Log Message[:hash of line]
 
         Each element is separated by a colon, ':'. If an optional part is not printed then the
         separator for that part is also not printed.
@@ -139,11 +144,13 @@ class Logger:
         log_hash = get_ignore_hash(file_name, line_text, include_indentation,
                                    log_type.name, rule_name)
 
+        if self._ignore_file_out:
+            self._ignore_file_out.add(log_hash, log_type.name,
+                                      pos.line, pos.col, msg,
+                                      file_name, rule_name)
+
         if not self._ignore_filter or not \
            self._ignore_filter.is_filtered(rule_name, pos.line, log_hash):
-
-            if self.show_hash():
-                log_msg = log_msg + log_hash + ": "
 
             log_msg = log_msg + file_name + ":"
 
@@ -156,6 +163,10 @@ class Logger:
 
             log_msg = log_msg + adjusted_log_type.name + ": " + rule_name + ": " + \
                       msg.expandtabs(self.get_tab_size())
+
+            if self.show_hash():
+                log_msg = log_msg + ": " + log_hash
+
             print(log_msg)
 
             if adjusted_log_type == LogType.ERROR:
