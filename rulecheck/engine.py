@@ -4,6 +4,7 @@ import sys
 # Local imports
 from rulecheck.file_checker import check_files_command
 from rulecheck.ignore import ignorelist_update_command
+from rulecheck.verbose import Verbose
 from rulecheck import __version__
 
 
@@ -70,14 +71,14 @@ def create_arg_parser():
 
 
 def rulecheck(args) -> int:
-    verbose = False
+
     if args.verbose:
-        verbose = True
+        Verbose.set_verbose(args.verbose)
 
     if args.config:
-        return check_files_command(args, verbose)
+        return check_files_command(args)
     if args.patch_ignore:
-        return ignorelist_update_command(args, verbose)
+        return ignorelist_update_command(args)
 
     return -1
 

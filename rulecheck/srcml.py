@@ -13,6 +13,8 @@ import sys
 # 3rd party imports
 from lxml import etree as ET
 
+from rulecheck.verbose import Verbose
+
 #pylint: disable=missing-function-docstring
 #pylint: disable=too-many-arguments
 #pylint: disable=too-many-instance-attributes
@@ -20,7 +22,7 @@ from lxml import etree as ET
 class Srcml:
     """ Class for managing srcml options and obtaining srcml output. """
 
-    def __init__(self, binary:str, args:[str], verbose:bool):
+    def __init__(self, binary:str, args:[str]):
         self._srcml_bin = binary
         self._srcml_args = args
         # These mappings align with
@@ -47,11 +49,7 @@ class Srcml:
                                ".aj":"Java",
                                ".cs":"C#"
                               }
-        self._verbose = verbose
 
-    def print_verbose(self, message:str):
-        if self._verbose:
-            print(message)
 
     def add_ext_mapping(self, ext:str, language:str):
         self._srcml_ext_mappings[ext] = language
@@ -88,7 +86,7 @@ class Srcml:
         else:
             raise ValueError('Unexpected or unsupported OS: ' + os.name)
 
-        self.print_verbose("Calling srcml: " + " ".join(srcml_cmd))
+        Verbose.print("Calling srcml: " + " ".join(srcml_cmd))
         child = subprocess.Popen(srcml_cmd, shell=False,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)

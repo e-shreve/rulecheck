@@ -2,7 +2,9 @@ from decimal import Decimal
 import glob
 import hashlib
 import pathlib
+import shutil
 import string
+import tempfile
 import traceback
 import typing
 from typing import List
@@ -10,6 +12,7 @@ from typing import List
 # Local imports
 from rulecheck.python_patch.patch import fromfile as patch_from_file
 from rulecheck.rule import LogType
+from rulecheck.verbose import Verbose
 
 
 #pylint: disable=missing-function-docstring
@@ -96,10 +99,11 @@ class IgnoreEntry:
             message = ': '.join(parts[4:])
 
         entry = IgnoreEntry(rule_name, ignore_hash, line_no, line_no)
-        entry._set_col_num(col_no)       #pylint: disable=protected-access
-        entry._set_file_name(file_name)  #pylint: disable=protected-access
-        entry._set_log_type(logstring)   #pylint: disable=protected-access
-        entry._set_message(message)      #pylint: disable=protected-access
+        entry.set_col_num(col_no)
+        entry.set_file_name(file_name)
+        entry.set_log_type_from_string(logstring)
+
+        entry.set_message(message)
 
         return entry
 
@@ -141,27 +145,30 @@ class IgnoreEntry:
 
         return False
 
-    def _set_log_type(self, part:str) -> bool:
-        if part == "ERROR":
+    def set_log_type_from_string(self, log_type:str) -> bool:
+        if log_type == "ERROR":
             self._log_type = LogType.ERROR
             return True
-        if part == "WARNING":
+        if log_type == "WARNING":
             self._log_type = LogType.WARNING
             return True
 
         return False
 
-    def _set_file_name(self, file_name:str):
+    def set_log_type(self, log_type:LogType):
+        self._log_type = log_type
+
+    def set_file_name(self, file_name:str):
         self._file_name = file_name
 
-    def _set_col_num(self, col_num:int):
+    def set_col_num(self, col_num:int):
         self._col_num = Decimal(col_num)
 
-    def _set_line_num(self, line_num:int):
+    def set_line_num(self, line_num:int):
         self._first= Decimal(line_num)
         self._last= Decimal(line_num)
 
-    def _set_message(self, message:str):
+    def set_message(self, message:str):
         self._message = message
 
     def get_rule_name(self) -> str:
@@ -259,15 +266,10 @@ class IgnoreFile:
     """ Used to manage (read, write, flush) Ignore File contents
     """
 
-    def __init__(self, verbose:bool):
+    def __init__(self):
         self._file_ignores = {}
         self._suspect_ignores = {}
-        self._verbose = verbose
         self._file_handle = None
-
-    def print_verbose(self, message:str):
-        if self._verbose:
-            print(message)
 
     def set_file_handle(self, file_handle:typing.TextIO):
         self._file_handle = file_handle
@@ -291,17 +293,17 @@ class IgnoreFile:
 
         except Exception as exc:  #pylint: disable=broad-except
             print("Failure while checking ignore list. Run with verbose mode for more information.")
-            self.print_verbose("Exception on parsing ignore list: " + str(exc))
-            self.print_verbose(traceback.format_exc())
+            Verbose.print("Exception on parsing ignore list: " + str(exc))
+            Verbose.print(traceback.format_exc())
 
     def add(self, log_hash, log_type:str, line:int, col:int, msg:str,
             file_name:str, rule_name:str):
 
         entry = IgnoreEntry(rule_name, log_hash, line, line)
-        entry._set_file_name(file_name)
-        entry._set_log_type(log_type)
-        entry._set_message(msg)
-        entry._set_col_num(col)
+        entry.set_file_name(file_name)
+        entry.set_log_type(log_type)
+        entry.set_message(msg)
+        entry.set_col_num(col)
 
         file_name_posix = pathlib.PurePath(entry.get_file_name()).as_posix()
 
@@ -326,7 +328,7 @@ class IgnoreFile:
             for ignore in ignores:
                 curent_line_num = ignore.get_line_num()
                 if curent_line_num >= old_line:
-                    ignore._set_line_num(curent_line_num + diff) #pylint: disable=protected-access
+                    ignore.set_line_num(curent_line_num + diff)
 
     def print_to_console(self):
         for file_name in self._file_ignores:
@@ -348,15 +350,9 @@ class IgnoreFilter:
         Use init_filter to load all ignore entries from the file for a given source file.
     """
 
-    def __init__(self, ignore_file:IgnoreFile, verbose:bool):
+    def __init__(self, ignore_file:IgnoreFile):
         self._ignore_file = ignore_file
         self._rule_ignores = {}
-        self._verbose = verbose
-
-    def print_verbose(self, message:str):
-        if self._verbose:
-            print(message)
-
 
     def init_filter(self, file_name:str):
         """ Loads all ignore rules from the ignore file for the given source file. """
@@ -376,8 +372,8 @@ class IgnoreFilter:
 
         except Exception as exc:  #pylint: disable=broad-except
             print("Failure while checking ignore list. Run with verbose mode for more information.")
-            self.print_verbose("Exception on parsing ignore list: " + str(exc))
-            self.print_verbose(traceback.format_exc())
+            Verbose.print("Exception on parsing ignore list: " + str(exc))
+            Verbose.print(traceback.format_exc())
 
     def disable(self, rule_name:str, line_num:int):
         """ Disable a rule (ignore it) for the given line number. """
@@ -408,13 +404,7 @@ class IgnoreFilter:
         return False
 
 
-VERBOSE_ENABLED: bool
 
-
-def print_verbose(message:str):
-    global VERBOSE_ENABLED
-    if VERBOSE_ENABLED:
-        print(message)
 
 def print_patch(patch):
     print("patch: " + str(patch.source) + " " + str(patch.target) + " " + str(patch.type))
@@ -436,41 +426,48 @@ def process_patches(globs:[str], ignores):
             for patch_path in glob.iglob(glob_str, recursive=True):
                 process_patch(patch_path, ignores)
 
-def ignorelist_update_command(args, verbose:bool) -> int:
+def ignorelist_update_command(args) -> int:
     print(args.patch_ignore)
 
     # Open question: how to handle file renames in patch files? what does that look like?
     # patch library says that file renames dno't work "out of the box" What does that mean?
 
+    Verbose.print("Ignore list specified: " + args.ignorelist)
+    ignore_list_file_handle = open(args.ignorelist, "r")
 
-    global VERBOSE_ENABLED
-
-    VERBOSE_ENABLED = verbose
-
-    ignore_list_file_handle = None
-    if args.ignorelist:
-        print_verbose("Ignore list specified: " + args.ignorelist)
-        ignore_list_file_handle = open(args.ignorelist, "r")
-
-    ignores = IgnoreFile(VERBOSE_ENABLED)
-    ignores.set_file_handle(ignore_list_file_handle)
-    ignores.load()
-    ignore_list_file_handle.close() #TODO use try finally to close
+    try:
+        ignores = IgnoreFile()
+        ignores.set_file_handle(ignore_list_file_handle)
+        ignores.load()
+    finally:
+        ignore_list_file_handle.close()
 
     ignores.print_to_console()
 
-    ignore_list_file_handle.close()
-
     process_patches([item for sublist in args.patch_ignore for item in sublist], ignores)
+
+    ignore_list_out_temp = tempfile.TemporaryFile(mode="w+")
+    try:
+        ignores.set_file_handle(ignore_list_out_temp)
+        ignores.write()
+    except Exception as ex:
+        if ignore_list_out_temp:
+            ignore_list_out_temp.close()
+        raise ex
 
     ignore_list_out = args.ignorelist
     if args.generateignorefile:
         ignore_list_out = args.generateignorefile
 
-    ignore_list_file_handle = open(ignore_list_out, "w")
-    ignores.set_file_handle(ignore_list_file_handle)
-    ignores.write()
-    ignore_list_file_handle.close() #TODO use try finally to close
+    try:
+        Verbose.print("Writing ignore list file: " + ignore_list_out)
+        ignore_list_out_file_handle = open(ignore_list_out, "w")
+        try:
+            shutil.copyfileobj(ignore_list_out_temp, ignore_list_out_file_handle)
+        finally:
+            ignore_list_out_file_handle.close()
+    finally:
+        ignore_list_out_temp.close()
 
     ignores.print_to_console()
 

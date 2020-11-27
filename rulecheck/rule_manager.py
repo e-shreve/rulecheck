@@ -20,6 +20,7 @@ from rulecheck.logger import Logger
 from rulecheck.rule import Rule
 from rulecheck.rule import LogType
 from rulecheck.rule import LogFilePosition
+from rulecheck.verbose import Verbose
 
 #pylint: disable=missing-function-docstring
 #pylint: disable=too-many-arguments
@@ -27,21 +28,14 @@ from rulecheck.rule import LogFilePosition
 
 class RuleManager:
 
-    def __init__(self, logger:Logger, ignore_filter:IgnoreFilter, verbose:bool):
+    def __init__(self, logger:Logger, ignore_filter:IgnoreFilter):
         self._rules_dict = {}
         self._current_rule_name = "rulecheck"
-        self._verbose = verbose
         self._logger_ref = logger
         self._ignore_filter = ignore_filter
 
-    def print_verbose(self, message:str):
-        if self._verbose:
-            print(message)
-
-    def enable_verbose(self):
-        self._verbose = True
-
-    def _add_rule_paths(self, rule_paths):
+    @staticmethod
+    def _add_rule_paths(rule_paths):
         if rule_paths:
             print (rule_paths)
             for rule_path in rule_paths:
@@ -51,7 +45,7 @@ class RuleManager:
                         sys.path.index(rule_path)
                     except ValueError:
                         # Only add if it wasn't already in the path
-                        self.print_verbose("Adding to sys.path: " + rule_path)
+                        Verbose.print("Adding to sys.path: " + rule_path)
                         sys.path.append(rule_path)
                 else:
                     print("Rule path not found: " + rule_path)
@@ -109,7 +103,7 @@ class RuleManager:
     def load_rules(self, config_files, rule_paths):
         """Loads all rules specified in the json configuration files."""
 
-        self._add_rule_paths(rule_paths)
+        RuleManager._add_rule_paths(rule_paths)
 
         for config_file in config_files:
             try:
@@ -120,17 +114,17 @@ class RuleManager:
 
                 seperator = '\n  '
                 if rules_loaded:
-                    self.print_verbose("From " + config_file + " loaded " + \
-                                       str(len(rules_loaded)) + " rules: " + seperator + \
-                                       seperator.join(rules_loaded))
+                    Verbose.print("From " + config_file + " loaded " + \
+                                  str(len(rules_loaded)) + " rules: " + seperator + \
+                                  seperator.join(rules_loaded))
 
                 if rules_skipped:
-                    self.print_verbose("From " + config_file + " skipped " + \
-                                       str(len(rules_loaded)) + " rules already loaded: " + \
-                                       seperator +  seperator.join(rules_skipped))
+                    Verbose.print("From " + config_file + " skipped " + \
+                                  str(len(rules_loaded)) + " rules already loaded: " + \
+                                  seperator +  seperator.join(rules_skipped))
 
                 if (not rules_loaded) and (not rules_skipped):
-                    self.print_verbose("From " + config_file + " no rules found to load.")
+                    Verbose.print("From " + config_file + " no rules found to load.")
 
             except Exception:  #pylint: disable=broad-except
                 print("Could not open config file: " + config_file)

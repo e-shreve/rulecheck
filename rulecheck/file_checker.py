@@ -1,4 +1,5 @@
 import shutil
+import tempfile
 
 # Local imports
 from rulecheck.srcml import Srcml
@@ -10,16 +11,11 @@ from rulecheck.logger import log_violation_wrapper
 from rulecheck.ignore import IgnoreFile
 from rulecheck.ignore import IgnoreFilter
 from rulecheck.rule import Rule
+from rulecheck.verbose import Verbose
 from rulecheck import __version__
 
-VERBOSE_ENABLED: bool
-
-def print_verbose(message:str):
-    global VERBOSE_ENABLED
-    if VERBOSE_ENABLED:
-        print(message)
-
 def print_summary(logger:Logger, file_manager:FileManager):
+    """Prints summary information of rule findings."""
     print("Total Files Checked: " + str(file_manager.get_file_count()))
     print("Total Warnings (ignored): " + str(logger.get_warning_count()) + "("
           + str(logger.get_ignored_warning_count()) + ")")
@@ -27,13 +23,14 @@ def print_summary(logger:Logger, file_manager:FileManager):
           + str(logger.get_ignored_error_count()) + ")")
 
 def create_srcml(args) -> Srcml:
+    """A factory to create a Srcml object based on program arguments """
     if args.srcml:
         srcml_bin = shutil.which('srcml', path=args.srcml)
     else:
         srcml_bin = shutil.which('srcml')
 
     if srcml_bin:
-        print_verbose("srcml binary located at: " + srcml_bin)
+        Verbose.print("srcml binary located at: " + srcml_bin)
     else:
         print("Could not locate srcml binary!")
         if args.srcml:
@@ -49,9 +46,32 @@ def create_srcml(args) -> Srcml:
     if args.tabs:
         srcml_args.append("--tabs=" + str(args.tabs))
 
-    return Srcml(srcml_bin, srcml_args, VERBOSE_ENABLED)
+    return Srcml(srcml_bin, srcml_args)
 
-def check_files_command(args, verbose:bool) -> int:
+def register_extensions(srcml:Srcml, extensions) -> int:
+    """Registers extension to language mappings with the srcml object"""
+    for register_ext in extensions:
+        regext = register_ext.split("=")
+        if len(regext) == 2:
+            srcml.add_ext_mapping('.'+regext[0], regext[1])
+        else:
+            print("Bad --register-ext option: " + register_ext)
+            return 1
+
+    Verbose.print("Extension to language mappings for srcml are: " + \
+                  str(srcml.get_ext_mappings()))
+
+    return 0
+
+def configure_logger_options(args):
+    """Handle all argument options that impact the logger"""
+    global LOGGER  #pylint: disable=global-statement
+    LOGGER.set_tab_size(args.tabs)
+    LOGGER.set_show_hash(args.showhashes)
+    LOGGER.set_warnings_are_errors(args.Werror)
+
+
+def check_files_command(args) -> int:
     """Run rule check using specified command line arguments. Returns exit value.
        0 = No errors, normal program termination.
        1 = Internal rulecheck error
@@ -59,10 +79,7 @@ def check_files_command(args, verbose:bool) -> int:
        3 = At least one rule reported a warning but no rules reported an error
     """
 
-    global LOGGER
-    global VERBOSE_ENABLED
-
-    VERBOSE_ENABLED = verbose
+    global LOGGER  #pylint: disable=global-statement
 
     srcml = create_srcml(args)
 
@@ -70,58 +87,64 @@ def check_files_command(args, verbose:bool) -> int:
         return 1
 
     if args.register_ext:
-        for register_ext in args.register_ext:
-            regext = register_ext.split("=")
-            if len(regext) == 2:
-                srcml.add_ext_mapping('.'+regext[0], regext[1])
-            else:
-                print("Bad --register-ext option: " + register_ext)
-                return 1
+        if not register_extensions(srcml, args.register_ext) == 0:
+            return 1
 
-        print_verbose("Extension to language mappings for srcml are: " + \
-                      str(srcml.get_ext_mappings()))
-
-    ignore_file_input = IgnoreFile(VERBOSE_ENABLED)
+    ignore_file_input = IgnoreFile()
     if args.ignorelist:
-        print_verbose("Ignore list input specified: " + args.ignorelist)
+        Verbose.print("Ignore list input specified: " + args.ignorelist)
         ignore_list_file_handle = open(args.ignorelist, "r")
-        ignore_file_input.set_file_handle(ignore_list_file_handle)
-        ignore_file_input.load()
-        ignore_list_file_handle.close() #TODO use try finally to close
+        try:
+            ignore_file_input.set_file_handle(ignore_list_file_handle)
+            ignore_file_input.load()
+        finally:
+            ignore_list_file_handle.close()
 
-    ignore_filter = IgnoreFilter(ignore_file_input, VERBOSE_ENABLED)
+    ignore_filter = IgnoreFilter(ignore_file_input)
 
-    LOGGER.set_tab_size(args.tabs)
-    LOGGER.set_show_hash(args.showhashes)
-    LOGGER.set_warnings_are_errors(args.Werror)
+    configure_logger_options(args)
     LOGGER.set_ignore_filter(ignore_filter)
-    LOGGER.set_verbose(VERBOSE_ENABLED)
 
     Rule.set_logger(log_violation_wrapper)
 
-    rule_manager = RuleManager(LOGGER, ignore_filter, VERBOSE_ENABLED)
+    rule_manager = RuleManager(LOGGER, ignore_filter)
 
     rule_manager.load_rules(args.config, args.rulepaths)
 
-    file_manager = FileManager(rule_manager, srcml, LOGGER, VERBOSE_ENABLED)
+    file_manager = FileManager(rule_manager, srcml, LOGGER)
 
-    ignore_list_out_file_handle = None
+    ignore_list_out_temp = None
     if args.generateignorefile:
-        print_verbose("Ignore list output specified: " + args.generateignorefile)
-        ignore_list_out_file_handle = open(args.generateignorefile, "w")
-        ignore_file_output = IgnoreFile(VERBOSE_ENABLED)
-        ignore_file_output.set_file_handle(ignore_list_out_file_handle)
+        Verbose.print("Ignore list output specified: " + args.generateignorefile)
+
+        ignore_file_output = IgnoreFile()
+
+        # Create in tempfile first
+        ignore_list_out_temp = tempfile.TemporaryFile(mode="w+")
+        ignore_file_output.set_file_handle(ignore_list_out_temp)
         LOGGER.set_ignore_file_out(ignore_file_output)
         file_manager.set_ignore_file_out(ignore_file_output)
 
     # Flatten list of lists in args.sources and pass to process_files
-    file_manager.process_files([item for sublist in args.sources for item in sublist])
+    try:
+        file_manager.process_files([item for sublist in args.sources for item in sublist])
+    except Exception as ex:
+        if ignore_list_out_temp:
+            ignore_list_out_temp.close()
+        raise ex
 
+    if args.generateignorefile:
+        try:
+            Verbose.print("Writing new ignore list file: " + args.generateignorefile)
+            ignore_list_out_file_handle = open(args.generateignorefile, "w")
+            try:
+                shutil.copyfileobj(ignore_list_out_temp, ignore_list_out_file_handle)
+            finally:
+                ignore_list_out_file_handle.close()
+        finally:
+            ignore_list_out_temp.close()
 
-    if ignore_list_out_file_handle:
-        ignore_list_out_file_handle.close() # TODO use try/finally to close
-
-    if VERBOSE_ENABLED:
+    if args.verbose:
         print_summary(LOGGER, file_manager)
 
     if LOGGER.get_error_count() > 0:

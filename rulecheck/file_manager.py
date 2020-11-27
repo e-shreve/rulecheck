@@ -9,27 +9,23 @@ from rulecheck.srcml import Srcml
 from rulecheck.logger import Logger
 from rulecheck.rule import LogType
 from rulecheck.rule import LogFilePosition
+from rulecheck.verbose import Verbose
 
 #pylint: disable=missing-function-docstring
 #pylint: disable=too-many-arguments
 #pylint: disable=too-many-instance-attributes
 
 class FileManager:
-    def __init__(self, rules:RuleManager, srcml:Srcml, logger:Logger, verbose:bool):
+    def __init__(self, rules:RuleManager, srcml:Srcml, logger:Logger):
         self._rules = rules
         self._srcml = srcml
         self._logger = logger
         self._current_file = None
         self._file_count = 0
-        self.verbose = verbose
         self._ignore_file_out = None
 
     def set_ignore_file_out(self, ignore_file_out:IgnoreFile):
         self._ignore_file_out = ignore_file_out
-
-    def print_verbose(self, message:str):
-        if self.verbose:
-            print(message)
 
     def process_files(self, globs:[str]):
 
@@ -53,7 +49,7 @@ class FileManager:
         try:
             file_stream = open(file_path, 'r', newline='')
             try:
-                self.print_verbose("Opened file for checking: " + file_path)
+                Verbose.print("Opened file for checking: " + file_path)
                 self._current_file = File(file_path,
                                           file_stream.readlines(),
                                           self._srcml.get_srcml(file_path))

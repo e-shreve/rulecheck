@@ -2,7 +2,6 @@ import abc
 import distutils.util
 from enum import Enum, auto
 
-
 class RuleType(Enum):
     """Designates the 'type' of a Rule object/class. Every rule must provide a type via
        its get_rule_type() method.

@@ -11,7 +11,6 @@ def test_tab_size_setting():
     logger.set_show_hash(False)
     logger.set_warnings_are_errors(False)
     logger.set_ignore_filter(None)
-    logger.set_verbose(False)
     assert logger.get_tab_size() == 4
 
     logger = Logger()
@@ -19,7 +18,6 @@ def test_tab_size_setting():
     logger.set_show_hash(False)
     logger.set_warnings_are_errors(False)
     logger.set_ignore_filter(None)
-    logger.set_verbose(False)
     assert logger.get_tab_size() == 6
 
     logger.set_tab_size(3)
@@ -32,7 +30,6 @@ def test_warning_and_error_counting():
     logger.set_show_hash(False)
     logger.set_warnings_are_errors(False)
     logger.set_ignore_filter(None)
-    logger.set_verbose(False)
     assert not logger.warnings_are_errors()
 
     assert logger.get_warning_count() == 0
@@ -49,7 +46,6 @@ def test_warning_and_error_counting():
     logger.set_show_hash(False)
     logger.set_warnings_are_errors(True)
     logger.set_ignore_filter(None)
-    logger.set_verbose(False)
     assert logger.warnings_are_errors()
 
     assert logger.get_warning_count() == 0
@@ -71,7 +67,6 @@ def test_show_hash_setting():
     logger.set_show_hash(False)
     logger.set_warnings_are_errors(False)
     logger.set_ignore_filter(None)
-    logger.set_verbose(False)
     assert not logger.show_hash()
 
     logger = Logger()
@@ -79,7 +74,6 @@ def test_show_hash_setting():
     logger.set_show_hash(True)
     logger.set_warnings_are_errors(False)
     logger.set_ignore_filter(None)
-    logger.set_verbose(False)
     assert logger.show_hash()
 
     logger.set_show_hash(False)
@@ -92,7 +86,6 @@ def test_log_contains_essential_info(capsys):
     logger.set_show_hash(False)
     logger.set_warnings_are_errors(False)
     logger.set_ignore_filter(None)
-    logger.set_verbose(False)
     pos = rule.LogFilePosition(1,1)
     logger.log_violation(rule.LogType.WARNING, pos, "a message", False,
                          "afilename.txt", "myrulepack.rule20",
@@ -121,7 +114,6 @@ def test_log_handles_pos_info(capsys):
     logger.set_show_hash(False)
     logger.set_warnings_are_errors(False)
     logger.set_ignore_filter(None)
-    logger.set_verbose(False)
 
 
     """ Show that line and col number of > 0 is included """
@@ -172,7 +164,6 @@ def test_log_hash(capsys):
     logger.set_show_hash(True)
     logger.set_warnings_are_errors(False)
     logger.set_ignore_filter(None)
-    logger.set_verbose(False)
 
     pos = rule.LogFilePosition(1,1)
     include_white_space = True
@@ -205,7 +196,6 @@ def test_pos_line_out_of_range(capsys):
     logger.set_show_hash(True)
     logger.set_warnings_are_errors(False)
     logger.set_ignore_filter(None)
-    logger.set_verbose(False)
 
     pos = rule.LogFilePosition(2,1)
     include_white_space = True

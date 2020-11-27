@@ -24,7 +24,6 @@ class Logger:
         self._show_hash = False
         self._warnings_are_errors = False
         self._ignore_filter = None
-        self._verbose = False
         self._total_warnings = 0
         self._total_errors = 0
         self._total_ignored_warnings = 0
@@ -32,9 +31,6 @@ class Logger:
         self._current_file = None
         self._current_rule_name = "rulecheck"
         self._ignore_file_out = None
-
-    def set_verbose(self, verbose:bool):
-        self._verbose = verbose
 
     def set_ignore_filter(self, ignore_filter:IgnoreFilter):
         self._ignore_filter = ignore_filter
@@ -53,10 +49,6 @@ class Logger:
 
     def get_current_rule_name(self) -> str:
         return self._current_rule_name
-
-    def print_verbose(self, message:str):
-        if self._verbose:
-            print(message)
 
     def get_tab_size(self) -> int:
         """ Tab size in spaces count. """

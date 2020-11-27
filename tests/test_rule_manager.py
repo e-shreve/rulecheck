@@ -21,8 +21,8 @@ from rulecheck import rule
 @pytest.fixture
 def rule_manager():
     """ Pytest fixture for generating rule manager instance """
-    ignore_filter = IgnoreFilter(None, verbose=False)
-    return RuleManager(None, ignore_filter, verbose=False)
+    ignore_filter = IgnoreFilter(None)
+    return RuleManager(None, ignore_filter)
 
 def test_no_config(rule_manager):
     """ Confirm that empty/none rule config list does not result in exception """
