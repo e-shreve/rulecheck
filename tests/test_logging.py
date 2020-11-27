@@ -1,5 +1,5 @@
 
-from rulecheck.engine import Logger
+from rulecheck.logger import Logger
 from rulecheck import rule
 
 

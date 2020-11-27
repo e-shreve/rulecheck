@@ -10,9 +10,9 @@ import json
 
 import pytest
 from rulecheck.file import File
-from rulecheck.engine import RuleManager
-from rulecheck.engine import IgnoreFilter
-from rulecheck.engine import Srcml
+from rulecheck.rule_manager import RuleManager
+from rulecheck.ignore import IgnoreFilter
+from rulecheck.srcml import Srcml
 from rulecheck import rule
 
 #pylint: disable=protected-access

@@ -7,14 +7,6 @@ from rulecheck.ignore import ignorelist_update_command
 from rulecheck import __version__
 
 
-#################################################
-##
-## Globals
-##
-#################################################
-
-VERBOSE_ENABLED: bool
-
 def create_arg_parser():
     parser = argparse.ArgumentParser()
     parser.description = "Tool to run rules on code."
@@ -78,16 +70,14 @@ def create_arg_parser():
 
 
 def rulecheck(args) -> int:
-    global VERBOSE_ENABLED
-
-    VERBOSE_ENABLED = False
+    verbose = False
     if args.verbose:
-        VERBOSE_ENABLED = True
+        verbose = True
 
     if args.config:
-        return check_files_command(args, VERBOSE_ENABLED)
+        return check_files_command(args, verbose)
     if args.patch_ignore:
-        return ignorelist_update_command(args, VERBOSE_ENABLED)
+        return ignorelist_update_command(args, verbose)
 
     return -1
 

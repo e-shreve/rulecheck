@@ -1,14 +1,14 @@
 import pytest
 
 from rulecheck.engine import rulecheck
-from rulecheck.engine import create_parser
+from rulecheck.engine import create_arg_parser
 
 #pylint: disable=redefined-outer-name
 
 @pytest.fixture
 def parser():
     """ Pytest fixture for generating the parser """
-    return create_parser()
+    return create_arg_parser()
 
 #TODO: Add to this test, as features are implemented:
 # Per rule werror, per rule strict mode
