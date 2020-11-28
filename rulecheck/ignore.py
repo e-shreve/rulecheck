@@ -484,12 +484,7 @@ def ignorelist_update_command(args) -> int:
     """Top level method for implementing the CLI command to update an ignore file
        based on code diff patches."""
 
-    print(args.patch_ignore)
-
-    # Open question: how to handle file renames in patch files? what does that look like?
-    # patch library says that file renames dno't work "out of the box" What does that mean?
-
-    Verbose.print("Ignore list specified: " + args.ignorelist)
+    Verbose.print("Ignore list input specified: " + args.ignorelist)
     ignore_list_file_handle = open(args.ignorelist, "r")
 
     try:
@@ -498,8 +493,6 @@ def ignorelist_update_command(args) -> int:
         ignores.load()
     finally:
         ignore_list_file_handle.close()
-
-    ignores.print_to_console()
 
     process_patches([item for sublist in args.patch_ignore for item in sublist], ignores)
 
@@ -525,7 +518,5 @@ def ignorelist_update_command(args) -> int:
             ignore_list_out_file_handle.close()
     finally:
         ignore_list_out_temp.close()
-
-    ignores.print_to_console()
 
     return 0
