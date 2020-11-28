@@ -1,5 +1,12 @@
+"""
+    File Checker Module
+
+    Runs primary rulecheck command to process files according to the configured rules.
+"""
+
 import shutil
 import tempfile
+import typing
 
 # Local imports
 from rulecheck.srcml import Srcml
@@ -12,7 +19,6 @@ from rulecheck.ignore import IgnoreFile
 from rulecheck.ignore import IgnoreFilter
 from rulecheck.rule import Rule
 from rulecheck.verbose import Verbose
-from rulecheck import __version__
 
 def print_summary(logger:Logger, file_manager:FileManager):
     """Prints summary information of rule findings."""
@@ -63,6 +69,16 @@ def register_extensions(srcml:Srcml, extensions) -> int:
 
     return 0
 
+def load_ignore_list_from_file(ignore_file_name:str, ignore_file:IgnoreFile):
+    """Loads ignore list from specified file."""
+    Verbose.print("Ignore list input specified: " + ignore_file_name)
+    ignore_list_file_handle = open(ignore_file_name, "r")
+    try:
+        ignore_file.set_file_handle(ignore_list_file_handle)
+        ignore_file.load()
+    finally:
+        ignore_list_file_handle.close()
+
 def configure_logger_options(args):
     """Handle all argument options that impact the logger"""
     global LOGGER  #pylint: disable=global-statement
@@ -71,7 +87,28 @@ def configure_logger_options(args):
     LOGGER.set_warnings_are_errors(args.Werror)
 
 
-def check_files_command(args) -> int:
+def generate_ignore_file_pre_step(file_manager:FileManager) -> typing.TextIO:
+    """Handle setup for generating of ignore file prior to all file/rule processing"""
+    ignore_file_output = IgnoreFile()
+
+    # Create in tempfile first
+    ignore_list_out_temp = tempfile.TemporaryFile(mode="w+")
+    ignore_file_output.set_file_handle(ignore_list_out_temp)
+    LOGGER.set_ignore_file_out(ignore_file_output)
+    file_manager.set_ignore_file_out(ignore_file_output)
+
+    return ignore_list_out_temp
+
+def generate_ignore_file_post_step(dest_file_name:str, source_handle:typing.TextIO):
+    """Handle generating of ignore file after all file/rule processing"""
+    Verbose.print("Writing new ignore list file: " + dest_file_name)
+    ignore_list_out_file_handle = open(dest_file_name, "w")
+    try:
+        shutil.copyfileobj(source_handle, ignore_list_out_file_handle)
+    finally:
+        ignore_list_out_file_handle.close()
+
+def check_files_command(args) -> int:  #pylint: disable=too-many-branches
     """Run rule check using specified command line arguments. Returns exit value.
        0 = No errors, normal program termination.
        1 = Internal rulecheck error
@@ -92,13 +129,7 @@ def check_files_command(args) -> int:
 
     ignore_file_input = IgnoreFile()
     if args.ignorelist:
-        Verbose.print("Ignore list input specified: " + args.ignorelist)
-        ignore_list_file_handle = open(args.ignorelist, "r")
-        try:
-            ignore_file_input.set_file_handle(ignore_list_file_handle)
-            ignore_file_input.load()
-        finally:
-            ignore_list_file_handle.close()
+        load_ignore_list_from_file(args.ignorelist, ignore_file_input)
 
     ignore_filter = IgnoreFilter(ignore_file_input)
 
@@ -115,15 +146,7 @@ def check_files_command(args) -> int:
 
     ignore_list_out_temp = None
     if args.generateignorefile:
-        Verbose.print("Ignore list output specified: " + args.generateignorefile)
-
-        ignore_file_output = IgnoreFile()
-
-        # Create in tempfile first
-        ignore_list_out_temp = tempfile.TemporaryFile(mode="w+")
-        ignore_file_output.set_file_handle(ignore_list_out_temp)
-        LOGGER.set_ignore_file_out(ignore_file_output)
-        file_manager.set_ignore_file_out(ignore_file_output)
+        ignore_list_out_temp = generate_ignore_file_pre_step(file_manager)
 
     # Flatten list of lists in args.sources and pass to process_files
     try:
@@ -135,12 +158,7 @@ def check_files_command(args) -> int:
 
     if args.generateignorefile:
         try:
-            Verbose.print("Writing new ignore list file: " + args.generateignorefile)
-            ignore_list_out_file_handle = open(args.generateignorefile, "w")
-            try:
-                shutil.copyfileobj(ignore_list_out_temp, ignore_list_out_file_handle)
-            finally:
-                ignore_list_out_file_handle.close()
+            generate_ignore_file_post_step(args.generateignorefile, ignore_list_out_temp)
         finally:
             ignore_list_out_temp.close()
 

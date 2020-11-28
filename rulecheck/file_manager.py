@@ -1,3 +1,9 @@
+"""
+    File Manager Module
+
+    Contains the FileManager class which handles iteration over files to be checked.
+"""
+
 import glob
 from pathlib import Path
 import sys
@@ -11,11 +17,9 @@ from rulecheck.rule import LogType
 from rulecheck.rule import LogFilePosition
 from rulecheck.verbose import Verbose
 
-#pylint: disable=missing-function-docstring
-#pylint: disable=too-many-arguments
-#pylint: disable=too-many-instance-attributes
-
 class FileManager:
+    """Processes globs to select files to pass to a RuleManager."""
+
     def __init__(self, rules:RuleManager, srcml:Srcml, logger:Logger):
         self._rules = rules
         self._srcml = srcml
@@ -25,9 +29,14 @@ class FileManager:
         self._ignore_file_out = None
 
     def set_ignore_file_out(self, ignore_file_out:IgnoreFile):
+        """Sets the ignore file being output. If it exists, the flush() method will be called on it
+           after each file is processed."""
+
         self._ignore_file_out = ignore_file_out
 
     def process_files(self, globs:[str]):
+        """Handles iteration over globs and passes individual file paths to process_file() for
+           processing."""
 
         if (not globs is None) and len(globs) > 0:
             # Handle STDIN input
@@ -41,6 +50,8 @@ class FileManager:
                         self.process_file(file_path)
 
     def process_file(self, file_path:str):
+        """Obtains srcml of file located at file_path and runs configured rules it."""
+
         self._current_file = None
 
         if Path(file_path).is_dir():
@@ -64,6 +75,7 @@ class FileManager:
 
 
     def get_file_count(self) -> int:
+        """Returns the total number files processed."""
         return self._file_count
 
     def log_file_exception(self, msg:str, exc:Exception, file_name:str):

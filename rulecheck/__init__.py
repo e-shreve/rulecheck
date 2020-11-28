@@ -1,3 +1,6 @@
+"""
+    Standard __init__.py file. Provides version number definition.
+"""
 import sys
 
 __version__ = '0.6.1'

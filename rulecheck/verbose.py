@@ -1,8 +1,9 @@
-'''
-Created on Nov 27, 2020
+"""
+    verbose Module
 
-@author: Erik
-'''
+    Contains the Verbose "static" class which provides printing to the console only if global
+    verbose mode has been enabled.
+"""
 from builtins import staticmethod
 
 

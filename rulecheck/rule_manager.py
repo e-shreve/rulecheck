@@ -1,13 +1,16 @@
+"""
+    Rule Manager Module
+
+    Contains the RuleManager class which is responsible for loading and configuring rules
+    and then providing for running rules on a given File object.
+"""
 
 import copy
-
 import json
 import os
 import pathlib
 import re
-
 import sys
-
 
 # 3rd party imports
 from lxml import etree as ET
@@ -22,11 +25,10 @@ from rulecheck.rule import LogType
 from rulecheck.rule import LogFilePosition
 from rulecheck.verbose import Verbose
 
-#pylint: disable=missing-function-docstring
-#pylint: disable=too-many-arguments
-#pylint: disable=too-many-instance-attributes
+
 
 class RuleManager:
+    """Provides all management of rules: loading, configuring and execution."""
 
     def __init__(self, logger:Logger, ignore_filter:IgnoreFilter):
         self._rules_dict = {}
@@ -130,6 +132,7 @@ class RuleManager:
                 print("Could not open config file: " + config_file)
 
     def activate_all_rules(self):
+        """Marks all loaded rules as active (meaning they will be executed against files.)"""
         for name, rule_array in self._rules_dict.items():
             for rule in rule_array:
                 try:
@@ -139,6 +142,7 @@ class RuleManager:
                                              See stderr.", exc, name)
 
     def visit_file_open_all_active_rules(self, file_name:str):
+        """Calls visit_file_open for each active rule."""
         for name, rule_array in self._rules_dict.items():
             self._set_current_rule_name(name)
             for rule in rule_array:
@@ -161,6 +165,7 @@ class RuleManager:
                                          See stderr.", exc, self._current_rule_name)
 
     def visit_file_close_all_active_rules(self, file_name:str):
+        """Calls visit_file_close for each active rule."""
         for name, rule_array in self._rules_dict.items():
             self._set_current_rule_name(name)
             for rule in rule_array:
@@ -183,6 +188,7 @@ class RuleManager:
                                          See stderr.", exc, self._current_rule_name)
 
     def visit_file_line_all_active_rules(self, line_num:int, line:str):
+        """Calls visit_file_line for each active rule."""
         for name, rule_array in self._rules_dict.items():
             self._set_current_rule_name(name)
             for rule in rule_array:
@@ -205,6 +211,7 @@ class RuleManager:
                 exc, self._current_rule_name)
 
     def check_for_rule_disable(self, line_num:int, line:str):
+        """Disables rule(s) if text on the provided line requests to do so."""
         match = re.search(r'(NORCNEXTLINE|NORC)\(([^)]+)', line)
         if match:
             if match.group(1) == 'NORCNEXTLINE':
@@ -233,6 +240,7 @@ class RuleManager:
         return re.sub('{.*}', '', full_tag_name)
 
     def visit_xml_all_active_rules(self, pos:LogFilePosition, node: ET.Element, event):
+        """Calls visit_xml for each active rule."""
         tag_name = RuleManager.strip_namespace(node.tag)
 
         for name, rule_array in self._rules_dict.items():
@@ -245,15 +253,20 @@ class RuleManager:
                     self.log_rule_exception("Exception thrown while calling is_active(). \
                                              See stderr.", exc, name)
 
-    def visit_xml(self, rule:Rule, pos:LogFilePosition, node: ET.Element, tag_name:str, event):
-        # First look for visit methods that include the tag name
-        # Note: parsing xml, the visit methods must be named
-        # visit_xml_nodename_start|end.
-        # The use of xml_ at the start avoids collisions with visit_file_open and
-        # visit_file_line should a <file_open>, <file_close> or <file_line> tag be
-        # encountered. Since the XML standard does not allow nodenames to start
-        # with 'xml' we also don't have to be concerned with a collision between
-        # <xml_name> and <name> since the former is not allowed.
+    def visit_xml(self, rule:Rule, pos:LogFilePosition, #pylint: disable=too-many-arguments
+                  node: ET.Element, tag_name:str, event):
+        """Calls any visit_xml_* method the Rule has defined per the following algorithm:
+
+           First look for visit methods that include the node name
+           Note: parsing xml, the visit methods must be named visit_xml_nodename_start|end.
+                 The use of xml_ at the start avoids collisions with visit_file_open and
+                 visit_file_line should a <file_open>, <file_close> or <file_line> tag be
+                 encountered. Since the XML standard does not allow nodenames to start
+                 with 'xml' we also don't have to be concerned with a collision between
+                 <xml_name> and <name> since the former is not allowed.
+            If method in first step not found, call visit_any_other_xml_element_start|end
+              if it exists.
+        """
         meth = getattr(rule, 'visit_xml_'+tag_name+'_'+event, None)
         if meth is not None:
             try:
@@ -277,6 +290,11 @@ class RuleManager:
 
 
     def run_rules_on_file(self, file:File):
+        """Runs the rules on the provided File object.
+           This method is responsible for implementing the algorithm to run the visit_
+           methods of the rules in the correct order.
+        """
+
         self._ignore_filter.init_filter(file.get_name())
 
         self.activate_all_rules()

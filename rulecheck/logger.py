@@ -1,3 +1,15 @@
+"""
+    Logger Module
+
+    Provides logging or errors and warnings for rulecheck and rules.
+
+    Contains the Logger class, a global instance of the class called LOGGER, and a convenience
+    method for logging called log_violation_wrapper.
+
+    It is intended that other parts of the system use LOGGER and log_violation_wrapper and not
+    create their own instances of the Logger class.
+"""
+
 # Local imports
 from rulecheck.file import File
 from rulecheck.ignore import IgnoreFile
@@ -6,13 +18,8 @@ from rulecheck.ignore import get_ignore_hash
 from rulecheck.rule import LogType
 from rulecheck.rule import LogFilePosition
 
-#pylint: disable=missing-function-docstring
-#pylint: disable=too-many-arguments
-#pylint: disable=too-many-instance-attributes
 
-
-
-class Logger:
+class Logger: #pylint: disable=too-many-instance-attributes
     """ Class used to perform the logging.
 
     Holds logging settings and implements the logging function.
@@ -33,21 +40,29 @@ class Logger:
         self._ignore_file_out = None
 
     def set_ignore_filter(self, ignore_filter:IgnoreFilter):
+        """The ignore filter is used to fitler errors/warnings from the console."""
         self._ignore_filter = ignore_filter
 
     def set_current_file(self, file:File):
+        """Indicates which file incoming log messages apply to."""
         self._current_file = file
 
     def set_current_rule_name(self, rulename:str):
+        """Indicates which rule is currently running, and thus which rule is generating log
+           messages."""
         self._current_rule_name = rulename
 
     def set_ignore_file_out(self, ignore_file_out:IgnoreFile):
+        """If present, the logger will send information on each log message to this
+           IgnoreFile object."""
         self._ignore_file_out = ignore_file_out
 
     def get_current_file(self) -> File:
+        """Get the file against which log messages are currently logged."""
         return self._current_file
 
     def get_current_rule_name(self) -> str:
+        """Get the rule name against which log messages are currently logged."""
         return self._current_rule_name
 
     def get_tab_size(self) -> int:
@@ -63,12 +78,16 @@ class Logger:
         return self._show_hash
 
     def set_tab_size(self, tab_size:int):
+        """Set the tab size in spaces.
+           Log messages will have tabs expanded to this number of spaces."""
         self._tabsize = tab_size
 
     def set_warnings_are_errors(self, warnings_are_errors:bool):
+        """Cause all warnings to be elevated to errors when set to True."""
         self._warnings_are_errors = warnings_are_errors
 
     def set_show_hash(self, show_hash:bool):
+        """Add the ignore file hash to the end of the console message."""
         self._show_hash = show_hash
 
     def _increment_warnings(self):
@@ -90,19 +109,24 @@ class Logger:
         self._total_ignored_errors += 1
 
     def get_warning_count(self) -> int:
+        """Get the total number of warnings logged across all files and rules."""
         return self._total_warnings
 
     def get_error_count(self) -> int:
+        """Get the total number of errors logged across all files and rules."""
         return self._total_errors
 
     def get_ignored_warning_count(self) -> int:
+        """Get the total number of warnings ignored across all files and rules."""
         return self._total_ignored_warnings
 
     def get_ignored_error_count(self) -> int:
+        """Get the total number of errors ignored across all files and rules."""
         return self._total_ignored_errors
 
-    def log_violation(self, log_type:LogType, pos:LogFilePosition, msg:str,
-                      include_indentation:bool, file_name:str, rule_name:str, source_lines:[str]):
+    def log_violation(self, log_type:LogType, pos:LogFilePosition, #pylint: disable=too-many-arguments
+                      msg:str, include_indentation:bool, file_name:str,
+                      rule_name:str, source_lines:[str]):
         """Log function for violations
 
         Each violation is logged as follows (with items in [] optional based on logging settings:

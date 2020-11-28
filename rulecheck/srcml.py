@@ -1,9 +1,8 @@
-#################################################
-##
-## SrcML Management
-##
-#################################################
+"""
+    srcml Module
 
+    Contains the Srcml class which works with the srcml binary to process source files into srcml.
+"""
 
 import os
 import shlex
@@ -15,10 +14,6 @@ from lxml import etree as ET
 
 from rulecheck.verbose import Verbose
 
-#pylint: disable=missing-function-docstring
-#pylint: disable=too-many-arguments
-#pylint: disable=too-many-instance-attributes
-
 class Srcml:
     """ Class for managing srcml options and obtaining srcml output. """
 
@@ -29,38 +24,44 @@ class Srcml:
         # the default mappings of srcml
         # https://github.com/srcML/srcML/blob/master/src/libsrcml/language_extension_registry.cpp
         self._srcml_ext_mappings = {".c":"C",
-                               ".h":"C",
-                               ".i":"C",
-                               ".cpp":"C++",
-                               ".CPP":"C++",
-                               ".cp":"C++",
-                               ".hpp":"C++",
-                               ".cxx":"C++",
-                               ".hxx":"C++",
-                               ".cc":"C++",
-                               ".hh":"C++",
-                               ".c++":"C++",
-                               ".h++":"C++",
-                               ".C":"C++",
-                               ".H":"C++",
-                               ".tcc":"C++",
-                               ".ii":"C++",
-                               ".java":"Java",
-                               ".aj":"Java",
-                               ".cs":"C#"
-                              }
+                                    ".h":"C",
+                                    ".i":"C",
+                                    ".cpp":"C++",
+                                    ".CPP":"C++",
+                                    ".cp":"C++",
+                                    ".hpp":"C++",
+                                    ".cxx":"C++",
+                                    ".hxx":"C++",
+                                    ".cc":"C++",
+                                    ".hh":"C++",
+                                    ".c++":"C++",
+                                    ".h++":"C++",
+                                    ".C":"C++",
+                                    ".H":"C++",
+                                    ".tcc":"C++",
+                                    ".ii":"C++",
+                                    ".java":"Java",
+                                    ".aj":"Java",
+                                    ".cs":"C#"
+                                   }
 
 
     def add_ext_mapping(self, ext:str, language:str):
+        """Add a mapping of an extension to a language.
+           Srcml binary will use these mappings to determine the language used in a file."""
         self._srcml_ext_mappings[ext] = language
 
     def can_read_extension(self, ext:str) -> bool:
+        """Returns True if the ext is in the extension to language mapping table."""
         return ext in self._srcml_ext_mappings
 
     def get_ext_mappings(self):
+        """Returns a copy of all extension to language mappings.
+           Srcml binary uses these mappings to determine the language used in a file."""
         return self._srcml_ext_mappings.copy()
 
     def get_srcml(self, file_name:str) -> bytes:
+        """Runs srcml on file_name, and returns the resulting srcml/xml."""
 
         file_extension = os.path.splitext(file_name)[1]
 

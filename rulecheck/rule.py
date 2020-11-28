@@ -1,3 +1,15 @@
+"""
+    Rule Module
+
+    Provides the base Rule class for all rules as well as the following support classes:
+      * RuleType enum
+      * LogType enum
+      * LogFilePosition class
+
+    Note that the last two are defined in the Rule Module and not the Logging module so that rule
+    implementations have fewer imports to be concerned about.
+"""
+
 import abc
 import distutils.util
 from enum import Enum, auto
@@ -12,6 +24,7 @@ class RuleType(Enum):
                However, they should not use any of the srcml tag information.
         - FILE based rules use per-file parsing methods and avoid any other parsing methods.
     """
+
     FILE = auto()
     LINE = auto()
     SRCML = auto()
@@ -21,6 +34,7 @@ class LogType(Enum):
        WARNING or ERROR. Note that werror options may force WARNINGS to be reported
        as ERRRORs.
     """
+
     WARNING = auto()
     ERROR = auto()
 
@@ -34,6 +48,7 @@ class LogFilePosition:
 
        Use -1 for a value if should not be included in a log message.
     """
+
     def __init__(self, line:int, col:int):
         self.line = line
         self.col = col
@@ -50,6 +65,7 @@ class LogFilePosition:
 class Rule:
     """Base class for all rules.
     """
+
     __log_function = None
 
     def __init__(self, settings):
