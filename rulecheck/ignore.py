@@ -11,6 +11,7 @@ import hashlib
 import pathlib
 import shutil
 import string
+import sys
 import tempfile
 import traceback
 import typing
@@ -18,6 +19,7 @@ from typing import List
 
 # Local imports
 from rulecheck.python_patch.patch import fromfile as patch_from_file
+from rulecheck.python_patch.patch import fromstring as patch_from_string
 from rulecheck.rule import LogType
 from rulecheck.verbose import Verbose
 
@@ -384,7 +386,7 @@ class IgnoreFile:
            IgnoreEntry values are still kept in memory after."""
         for file_name in self._file_ignores:
             for ignore in self._file_ignores[file_name]:
-                self._file_handle.write(ignore.get_ignore_file_line() + "\n")
+                self._file_handle.write(ignore.get_ignore_file_line())
 
     def flush(self):
         """Writes all tracked IgnoreEntry values to the file.
@@ -463,22 +465,41 @@ def print_patch(patch):
                                str(hunk.starttgt), str(hunk.linestgt),
                                str(hunk.invalid), str(hunk.desc), str(hunk.text)]))
 
-def process_patch(patch_file:str, ignores):
-    """Loads the patches of the file specified by patch_file and
-       bumps the ignores based on the patch file contents."""
-    patchset = patch_from_file(patch_file)
+def process_patchset(patchset, ignores):
+    """Bumps the ignores based on the patch set contents."""
     for patch in patchset:
         for hunk in reversed(patch):
             ignores.bump(patch.source.decode("utf-8"), hunk.startsrc, hunk.linestgt - hunk.linessrc)
 
+
+def get_patch_from_stdin():
+    """Read in stdin to get a patch file"""
+    stdin_content = sys.stdin.read()
+    patchset = patch_from_string(bytes(stdin_content, 'utf-8'))
+    return patchset
 
 def process_patches(globs:[str], ignores):
     """Process each patch file found in the globs by passing the patch file's path
        to process_patch() method."""
     if (not globs is None) and len(globs) > 0:
         for glob_str in globs:
-            for patch_path in glob.iglob(glob_str, recursive=True):
-                process_patch(patch_path, ignores)
+            if glob_str == "-":
+                if not sys.stdin.isatty():
+                    patchset = get_patch_from_stdin()
+                    if patchset:
+                        process_patchset(patchset, ignores)
+                    else:
+                        raise ValueError('Parsing of patch from stdin failed.')
+                else:
+                    raise IOError('stdin empty.')
+                    #TOOO: check in glob branch as well and return error so processing can stop
+            else:
+                for patch_path in glob.iglob(glob_str, recursive=True):
+                    patchset = patch_from_file(patch_path)
+                    if patchset:
+                        process_patchset(patchset, ignores)
+                    else:
+                        raise ValueError('Parsing of patch from ' + patch_path + ' failed.')
 
 def ignorelist_update_command(args) -> int:
     """Top level method for implementing the CLI command to update an ignore file
@@ -513,6 +534,7 @@ def ignorelist_update_command(args) -> int:
         Verbose.print("Writing ignore list file: " + ignore_list_out)
         ignore_list_out_file_handle = open(ignore_list_out, "w")
         try:
+            ignore_list_out_temp.seek(0)
             shutil.copyfileobj(ignore_list_out_temp, ignore_list_out_file_handle)
         finally:
             ignore_list_out_file_handle.close()

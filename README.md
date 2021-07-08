@@ -56,6 +56,9 @@ to obtain the line number of tag from the source XML file. lxml has been availab
 and thus should not present an issue for users. lxml will be installed by pip automatically when
 installing rulecheck.
 
+#### Credits
+rulecheck includes and uses [Python Patch](https://pypi.python.org/pypi/patch), a library that can parse Git (and other) diffs.
+rulecheck depends on [SrcML](https://www.srcml.org/) for source code parsing.
 ___
 ### <a id="running">Running and Configuration
 ___
