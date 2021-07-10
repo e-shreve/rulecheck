@@ -327,7 +327,7 @@ configurations currently configured will be generated.
 Use the -i option to specify an input ignore list. 
 
 #### Adding New Entries to an Existing Ignore List
-Specify -i option to provide the existing ignore list and then specify -g option to create a new list
+Specify -i option to provide the existing ignore list and specify -g option to create a new list
 file. Use any text diff utility to compare the files and selectively move any desired entries in the new
 list into the existing list. 
 
@@ -396,7 +396,7 @@ author.
 ___
 ### Resources
 ___
-* [srcml](https://www.srcml.org)d
+* [srcml](https://www.srcml.org)
 * [srcml source](https://github.com/srcML/srcML)
 * [lxml](https://lxml.de/)
 ___
