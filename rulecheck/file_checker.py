@@ -103,7 +103,9 @@ def generate_ignore_file_post_step(dest_file_name:str, source_handle:typing.Text
     """Handle generating of ignore file after all file/rule processing"""
     Verbose.print("Writing new ignore list file: " + dest_file_name)
     ignore_list_out_file_handle = open(dest_file_name, "w")
+
     try:
+        source_handle.seek(0)
         shutil.copyfileobj(source_handle, ignore_list_out_file_handle)
     finally:
         ignore_list_out_file_handle.close()

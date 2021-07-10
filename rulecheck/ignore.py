@@ -341,7 +341,7 @@ class IgnoreFile:
            entries that can be later written or flushed to the file."""
         entry = IgnoreEntry(rule_name, log_hash, line, line)
         entry.set_file_name(file_name)
-        entry.set_log_type(log_type)
+        entry.set_log_type_from_string(log_type)
         entry.set_message(msg)
         entry.set_col_num(col)
 
@@ -386,7 +386,7 @@ class IgnoreFile:
            IgnoreEntry values are still kept in memory after."""
         for file_name in self._file_ignores:
             for ignore in self._file_ignores[file_name]:
-                self._file_handle.write(ignore.get_ignore_file_line())
+                self._file_handle.write(ignore.get_ignore_file_line() + "\n")
 
     def flush(self):
         """Writes all tracked IgnoreEntry values to the file.
