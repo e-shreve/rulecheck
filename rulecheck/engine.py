@@ -19,7 +19,9 @@ def create_arg_parser():
                         action="append", type=str)
     command_group.add_argument("-p", "--patch_ignore",
                                help="""patch an ignore list with patch
-                                       files of the source. Provide a glob to the patch files.
+                                       files of the source or diff entries on stdin. Either, provide
+                                       a glob to the patch files or use '-' to indicate the diff
+                                       entries will be provided on stdin.
                                        Specify multiple times to specify multiple in-order
                                        globs to use.
                                        Use -i to specify ignore file to update (file will be 

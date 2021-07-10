@@ -27,6 +27,7 @@ ___
 * [Running and Configuration](#running)
 * [Design Choices](#design)
 * [Resources](#resources)
+* [Credits](#credits)
 
 To learn how to write your own rules, see [how to create rules](how_to_create_rules.md).
 ___
@@ -56,9 +57,6 @@ to obtain the line number of tag from the source XML file. lxml has been availab
 and thus should not present an issue for users. lxml will be installed by pip automatically when
 installing rulecheck.
 
-#### Credits
-rulecheck includes and uses [Python Patch](https://pypi.python.org/pypi/patch), a library that can parse Git (and other) diffs.
-rulecheck depends on [SrcML](https://www.srcml.org/) for source code parsing.
 ___
 ### <a id="running">Running and Configuration
 ___
@@ -185,12 +183,27 @@ Rulecheck's ability to load multiple configuration files and combine them suppor
 The files to process and/or the paths rulecheck will search to find files to process are provided on the command line as the last parameter (it must be the last parameter.) 
 The paths are specified in glob format. Recursive searches using '**' are supported. 
 In addition, the '?' (any character), '*' (any number of characters), and '[]' (character in range) wildcards are supported.
+The following example will process any file contained in the src directory tree (including in subdirectories):
+
+```bash
+rulecheck -c config.json ./src/**/*
+```
+
+This example will process any file in the src directory tree ending with .h or .c (but not .H, .C, or any other extension):
+
+```bash
+rulecheck -c config.json ./src/**/*.[ch]
+```
 
 Multiple files and paths to search can be specified by separating them with spaces. If a space is in a path, enclose the glob in quotation marks.
 
 Alternatively, the files or paths to check can be specified via stdin. Specify '-' as the final parameter to have rulecheck read the list in from stdin.
 
-When searching the paths specified, rulecheck will process any file found with one of the following case-sensitive extensions:
+```bash
+find ./src/ -type f -name "*.c" | rulecheck -c config.json -
+```
+
+When processing the paths and/or files specified, rulecheck will process any file found with one of the following case-sensitive extensions:
 .c, .h, .i, .cpp, .CPP, .cp, .hpp, .cxx, .hxx, .cc, .hh, .c++, .h++, .C, .H, .tcc, .ii, .java, .aj, .cs
 
 To change the list of extensions rulecheck will parse when searching paths, use the -x or --extensions command line option.
@@ -200,9 +213,9 @@ To change the language to extension mapping see the --register-ext option.
 
 #### Specifying Where Rule Scripts Are
 
-Rules are encouraged to be installed onto the python path using a concept known as "rulepacks." This is covered later in this document. 
+Rules are encouraged to be installed onto the python path using a concept known as [rulepacks](#rulepacks). This is covered later in this document. 
 However, there are situations where rules may not be installed to the python path. For example, when a rule is under development or when a rule is
-created for a single project and is kept in the same revision control system as the source being checked by the rule. For these situations, one or more
+created for a single project and is kept in the same revision control repository as the source being checked by the rule. For these situations, one or more
 paths to rules may be specified on the command line using the -r option. If more than one path is needed, repeat the option on the command line for
 each path.
 
@@ -276,10 +289,92 @@ Note that whitespace between NORC/NORCNEXTLINE and the opening parenthesis are n
 
 ### <a id="ignore_lists"></a>Ignore Lists
 
-- [ ] to be written (Feature is implemented.)
+Ignore lists provide a means to suppress rule violation messages without modifying the source code
+containing the violation. Rulecheck provides for the creation of an ignore list and provides
+for the modification of the ignore list based on source file diffs.
+
+Ignore list entries will suppress the violation message for a given line in a source file as
+long as no characters of that line have changed. Leading whitespace is included in this check
+for some rules, but not for other rules (each rule may declare itself as leading whitespace
+sensitive or not.) For rules which ignore leading whitespace, this allows ignore entries to continue
+to work even if a line has had its indentation level changed (for example by surrounding it a new
+if clause.) 
+
+#### Ignore List Contents
+Ignore lists are simple text files (enabling easy editing by hand should the need arise) with each
+line typically containing a single ignore list entry. An ignore list entry (henceforth referred to
+as an "entry") consists of the following elements, in order, and separated by colons and a single space (': '):
+* Unique hash ID (must begin the line, no leading white space allowed)
+  * The hash is over the file's name, the rule's name, the violation type, and the source line's contents (with or without leading whitespace depending on the rule's properties.)
+* Path of file with violation, with line and column number information, if relevant to violation
+  * Column information is provided for readability only and is not used by rulecheck
+* Violation type (ERROR or WARNING)
+* Rule name
+* Violation message (may contain line breaks and colons)
+
+#### Creating an Ignore List
+Use the -g option to specify an output file in which rulecheck should write ignore list entries.
+Rulecheck will _overwrite_ the destination file with an entry for _every_ violation encountered
+during the execution of the rules. 
+
+To quickly ignore all violations in an existing code base and start enforcing the rules on new
+code only, simply generate an ignore list on the existing code and use it on all subsequent runs.
+
+While somewhat obvious, keep in mind that only entries for rule violations of rules and rule 
+configurations currently configured will be generated.   
+
+#### Using Ignore Lists
+Use the -i option to specify an input ignore list. 
+
+#### Adding New Entries to an Existing Ignore List
+Specify -i option to provide the existing ignore list and then specify -g option to create a new list
+file. Use any text diff utility to compare the files and selectively move any desired entries in the new
+list into the existing list. 
+
+#### Finding and Removing Unused Ignore List Entries
+Use the -g option to generate a new ignore list file. Use any text comparison/diff utility to
+compare the new file to the old ignore list file. Any entries in the old file that are not in the
+new file are unused. You may simply delete those entries in the old file. 
+
+#### Updating Ignore Lists for Line Number Changes
+Rulecheck includes a feature to modify an ignore list file to accommodate line number changes in
+source files. _Note:_ ignore list entries do not match on column numbers, column numbers are
+provided for human readability only. _Note:_ only diff/patch files generated by git have been
+tested. However, svn and hg are expected to also work.
+
+Use the -p option to activate this feature. 
+
+The easiest way to use this feature is to pipe the version control diff into rulecheck, by 
+specifying '-' for the -p option.
+
+```bash
+git diff -U0 ./tests/src/network/err.c | rulecheck -p - -i ignore.txt 
+```
+
+_Note_ the use of -U0 with git diff to provide no extra context in the diff, resulting in only the
+lines changed being present in the diff output (Git defaults to 3 context lines). For proper operation,
+this must be done. 
+
+If it is undesirable to modify the ignore list file, use the -g option to specify a new file to
+write the output to.
+
+The other way to use this feature is to generate patch files and then provide those patch files to
+rulecheck. One or more globs to patch files may be specified. In order to provide appropriate line
+number updates, the order of the patch files matter. Thus, patch files must properly sort by filename
+according to their application order. Further, if multiple globs are provides to rulecheck, they must
+be in the order in which the patches should be applied.
+
+```bash
+git format-patch -U0 HEAD~2
+rulecheck -p *.patch -i ignore.txt
+```
+
+Again, note that U0 must be used to ensure the patch files do not contain extra context lines.
+
+
 
 ___
-### Rulepacks
+### <a id="rulepacks"></a>Rulepacks
 
 - [ ] to be written
 
@@ -294,12 +389,18 @@ ___
 
 rulecheck intentionally does not support modification of the files parsed. Doing so would require rulecheck to 
 repeatedly run modified files through all rules until no new log messages were produced. However, a modification
-made by one rule could trigger another rule to be violated. Thus, the execution might never terminate. In addition,
-many coding standard rules that can be automatically fixed deal strictly with whitespace and there are already many
-tools and IDEs that support formatting of whitespace to any imaginable standard.
+made by one rule could trigger another rule to be violated. Further, it is anticipated that many rules
+written for rulecheck will either not be automatically fixable by simple formatting rules or simple
+formatting modifications will too often undo formatting that was carefully considered by the source
+author.
 ___
 ### Resources
 ___
-* [srcml](https://www.srcml.org)
+* [srcml](https://www.srcml.org)d
 * [srcml source](https://github.com/srcML/srcML)
 * [lxml](https://lxml.de/)
+___
+### <a id="credits"></a>Credits
+___
+* rulecheck includes and uses [Python Patch](https://pypi.python.org/pypi/patch), a library that can parse Git (and other) diffs.
+* rulecheck depends on [SrcML](https://www.srcml.org/) for source code parsing.

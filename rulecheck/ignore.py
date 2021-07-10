@@ -431,7 +431,7 @@ class IgnoreFilter:
         if rule_name not in self._rule_ignores:
             self._rule_ignores[rule_name] = []
 
-        # Use '*' for IgnoreEntry so any hash value will be ingored.
+        # Use '*' for IgnoreEntry so any hash value will be ignored.
         self._rule_ignores[rule_name].append(IgnoreEntry(rule_name, '*', line_num, line_num))
 
     def is_filtered(self, rule_name:str, line_num:int, line_hash:hashlib.md5) -> bool:
@@ -471,7 +471,6 @@ def process_patchset(patchset, ignores):
         for hunk in reversed(patch):
             ignores.bump(patch.source.decode("utf-8"), hunk.startsrc, hunk.linestgt - hunk.linessrc)
 
-
 def get_patch_from_stdin():
     """Read in stdin to get a patch file"""
     stdin_content = sys.stdin.read()
@@ -492,7 +491,6 @@ def process_patches(globs:[str], ignores):
                         raise ValueError('Parsing of patch from stdin failed.')
                 else:
                     raise IOError('stdin empty.')
-                    #TOOO: check in glob branch as well and return error so processing can stop
             else:
                 for patch_path in glob.iglob(glob_str, recursive=True):
                     patchset = patch_from_file(patch_path)
