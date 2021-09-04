@@ -116,7 +116,7 @@ def test_log_handles_pos_info(capsys):
     logger.set_ignore_filter(None)
 
 
-    """ Show that line and col number of > 0 is included """
+    # Show that line and col number of > 0 is included
     pos = rule.LogFilePosition(1,1)
     logger.log_violation(rule.LogType.WARNING, pos, "a message", False,
                          "afilename.txt", "myrulepack.ruleC",
@@ -124,7 +124,7 @@ def test_log_handles_pos_info(capsys):
     captured = capsys.readouterr()
     assert "1:1" in captured.out
 
-    """ Show that line and col number of > 0 is included """
+    # Show that line and col number of > 0 is included 
     pos = rule.LogFilePosition(2,5)
     logger.log_violation(rule.LogType.WARNING, pos, "a message", False,
                          "afilename.txt", "myrulepack.ruleC",
@@ -132,7 +132,7 @@ def test_log_handles_pos_info(capsys):
     captured = capsys.readouterr()
     assert "2:5" in captured.out
 
-    """ Show that col not included if <= 0 but line number still is """
+    # Show that col not included if <= 0 but line number still is 
     pos = rule.LogFilePosition(2,0)
     logger.log_violation(rule.LogType.WARNING, pos, "a message", False,
                          "afilename.txt", "myrulepack.ruleC",
@@ -148,7 +148,7 @@ def test_log_handles_pos_info(capsys):
     assert ":2:" in captured.out
     assert "-1" not in captured.out
 
-    """ Show that line and col number are not included if they are both <= 0 """
+    # Show that line and col number are not included if they are both <= 0 
     pos = rule.LogFilePosition(0,0)
     logger.log_violation(rule.LogType.WARNING, pos, "a message", False,
                          "afilename.txt", "myrulepack.ruleC",

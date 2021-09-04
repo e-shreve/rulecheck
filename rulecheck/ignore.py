@@ -119,22 +119,27 @@ class IgnoreEntry:  #pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def _get_file_info(file_info_parts) -> (str, int, int):
+        """Parses sections of a file info, pre-split on ':'.
+           Returns a triplet of filename, line number, and column number.
+           NOTE: Filenames that end with a combination of colons and decimal
+           digits will not be handled correctly. """
         file_name = ""
         line_num = -1
         col_num = -1
 
         if len(file_info_parts) >= 3:
-            if file_info_parts[1].isdigit():
-                if file_info_parts[2].isdigit():
-                    col_num = int(file_info_parts[2])
-                    line_num = int(file_info_parts[1])
-                    file_name = file_info_parts[0]
-            elif file_info_parts[2].isdigit():
-                line_num = int(file_info_parts[2])
-                file_name = file_info_parts[0] + ":" + file_info_parts[1]
+            last_i = len(file_info_parts) - 1
+            second_to_last_i = last_i - 1
+            if file_info_parts[second_to_last_i].isdigit():
+                if file_info_parts[last_i].isdigit():
+                    col_num = int(file_info_parts[last_i])
+                    line_num = int(file_info_parts[second_to_last_i])
+                    file_name = ':'.join(file_info_parts[0:second_to_last_i])
+            elif file_info_parts[last_i].isdigit():
+                line_num = int(file_info_parts[last_i])
+                file_name = ':'.join(file_info_parts[0:last_i])
             else:
-                file_name = file_info_parts[0] + ":" + file_info_parts[1] + ":" + \
-                                  file_info_parts[2]
+                file_name = ':'.join(file_info_parts[0:last_i+1])
         elif len(file_info_parts) == 2:
             if file_info_parts[1].isdigit():
                 line_num = int(file_info_parts[1])
