@@ -282,7 +282,7 @@ void myFunction3(int a);
 
 // Comments after the closing parenthesis may contain any text.
 // It is good practice to justify the suppression.
-void myFunction4(int a); // NORC(myrulepack.function\_name\_prefix): Function name required for backward compatibility.
+void myFunction4(int a); // NORC(myrulepack.function_name_prefix): Function name required for backward compatibility.
 ```
 
 Note that whitespace between NORC/NORCNEXTLINE and the opening parenthesis are not allowed.
