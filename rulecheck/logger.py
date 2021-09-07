@@ -166,7 +166,7 @@ class Logger: #pylint: disable=too-many-instance-attributes
                                       file_name, rule_name)
 
         if not self._ignore_filter or not \
-           self._ignore_filter.is_filtered(rule_name, pos.line, log_hash):
+            self._ignore_filter.is_filtered(rule_name, pos.line, log_hash):
 
             log_msg = log_msg + file_name + ":"
 

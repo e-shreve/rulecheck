@@ -107,6 +107,7 @@ class IgnoreEntry:  #pylint: disable=too-many-instance-attributes
         message = parts[4]
         if not len(parts) - 1 == 4:
             message = ': '.join(parts[4:])
+        message = message.rstrip() # Strip newlines/whitespace
 
         entry = IgnoreEntry(rule_name, ignore_hash, line_no, line_no)
         entry.set_col_num(col_no)
@@ -317,7 +318,7 @@ class IgnoreFile:
         self._file_handle = file_handle
 
     def load(self):
-        """Load rules from file."""
+        """Load ignore entries from file. Any existing entries are removed."""
         self._file_ignores.clear()
 
         try:
@@ -369,11 +370,10 @@ class IgnoreFile:
         """For given file name, bumps the line number (both first and last)
            of any entry on line old_line or greater by the number
            specified by diff."""
-        if not file_name in self._file_ignores:
-            file_name = "./"+ file_name
+        file_name_posix = pathlib.PurePath(file_name).as_posix()
 
-        if file_name in self._file_ignores:
-            ignores = self._file_ignores[file_name]
+        if file_name_posix in self._file_ignores:
+            ignores = self._file_ignores[file_name_posix]
 
             for ignore in ignores:
                 curent_line_num = ignore.get_line_num()
@@ -384,7 +384,7 @@ class IgnoreFile:
         """Prints all tracked IgnoreEntry values to the console."""
         for file_name in self._file_ignores:
             for ignore in self._file_ignores[file_name]:
-                print(ignore.get_ignore_file_line(), end = "")
+                print(ignore.get_ignore_file_line())
 
     def write(self):
         """Writes all tracked IgnoreEntry values to the file.
@@ -432,7 +432,12 @@ class IgnoreFilter:
             Verbose.print(traceback.format_exc())
 
     def disable(self, rule_name:str, line_num:int):
-        """ Disable a rule (ignore it) for the given line number. """
+        """ Disable a rule (ignore it) for the given line number.
+            This is accomplished by adding a new IgnoreEntry to the 
+            _rule_ignores map. This entry could be redundant with
+            an entry already loaded, but such a redundancy is 
+            expected to be a rare occurrence. Thus, not attempt is made
+            to avoid said occurrence. """
         if rule_name not in self._rule_ignores:
             self._rule_ignores[rule_name] = []
 
@@ -440,8 +445,11 @@ class IgnoreFilter:
         self._rule_ignores[rule_name].append(IgnoreEntry(rule_name, '*', line_num, line_num))
 
     def is_filtered(self, rule_name:str, line_num:int, line_hash:hashlib.md5) -> bool:
-        """ Returns True if the violation should not be logged """
+        """ If the violation is filtered, the corresponding
+            ignore entry is marked as having been used (mark_use() called)
+            and True is returned. Otherwise, False is returned."""
 
+        # Look for cases where all rules are ignored for the given line
         if '*' in self._rule_ignores:
             for ignore in self._rule_ignores['*']:
                 if ignore.is_active():
@@ -450,8 +458,9 @@ class IgnoreFilter:
                             ignore.mark_use()
                             return True
 
+        # Look for cases where the specific rule is ignored for the given line
         if rule_name in self._rule_ignores:
-            for ignore in self._rule_ignores[rule_name]:
+            for ignore in self._rule_ignores[rule_name]:                
                 if ignore.is_active():
                     if ignore.get_first() <= line_num <= ignore.get_last():
                         if ignore.get_hash() == '*' or ignore.get_hash() == str(line_hash):

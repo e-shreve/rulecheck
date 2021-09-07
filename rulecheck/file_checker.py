@@ -89,6 +89,8 @@ def configure_logger_options(args):
 
 def generate_ignore_file_pre_step(file_manager:FileManager) -> typing.TextIO:
     """Handle setup for generating of ignore file prior to all file/rule processing"""
+    global LOGGER  #pylint: disable=global-statement
+
     ignore_file_output = IgnoreFile()
 
     # Create in tempfile first
